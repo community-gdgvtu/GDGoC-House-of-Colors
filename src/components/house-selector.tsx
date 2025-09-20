@@ -20,7 +20,6 @@ interface HouseSelectorProps {
 
 export function HouseSelector({ user }: HouseSelectorProps) {
   const [houses, setHouses] = useState<House[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
@@ -28,23 +27,12 @@ export function HouseSelector({ user }: HouseSelectorProps) {
     const unsub = onSnapshot(collection(db, 'houses'), (snapshot) => {
       const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as House));
       setHouses(housesData);
-      setLoading(false);
-    }, (error) => {
-      console.error("Error fetching houses in HouseSelector:", error);
-      toast({
-        title: "Error fetching houses",
-        description: "Could not load house list. Check console for details.",
-        variant: "destructive"
-      })
-      setLoading(false);
     });
 
     return () => unsub();
   }, []);
 
   const handleHouseChange = async (selectedValue: string) => {
-    // If the selected value is 'unassigned', we want to store an empty string in Firestore.
-    // Otherwise, we store the selected house ID.
     const newHouseId = selectedValue === "unassigned" ? "" : selectedValue;
 
     if (newHouseId === user.houseId) return;
@@ -69,10 +57,6 @@ export function HouseSelector({ user }: HouseSelectorProps) {
     }
   };
   
-  if (loading) {
-    return <div className="text-xs text-muted-foreground">Loading...</div>;
-  }
-
   // If user.houseId is "" (falsy), use "unassigned" as the value for the Select component.
   const selectValue = user.houseId || "unassigned";
 
