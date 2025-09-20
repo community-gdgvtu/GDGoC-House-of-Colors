@@ -35,7 +35,6 @@ interface PointHistory {
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const [houses, setHouses] = useState<House[]>([]);
-  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [pointHistory, setPointHistory] = useState<PointHistory[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
 
@@ -69,35 +68,17 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-    const fetchHousesAndUsers = async () => {
-        const housesQuery = query(collection(db, "houses"));
-        const usersQuery = query(collection(db, "users"));
-        
-        const unsubHouses = onSnapshot(housesQuery, (snapshot) => {
-            const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as House[];
-            setHouses(housesData);
-        });
+    const housesQuery = query(collection(db, "houses"));
+    const unsubHouses = onSnapshot(housesQuery, (snapshot) => {
+        const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as House[];
+        setHouses(housesData);
+    });
 
-        const unsubUsers = onSnapshot(usersQuery, (snapshot) => {
-            const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setAllUsers(usersData);
-        });
-
-        return () => {
-            unsubHouses();
-            unsubUsers();
-        }
-    }
-    fetchHousesAndUsers();
+    return () => unsubHouses();
   }, []);
 
   const housePoints = houses.map(h => {
-    const houseUsers = allUsers.filter(u => u.houseId === h.id);
-    const totalPoints = houseUsers.reduce((acc, u) => {
-      const userPoints = u.points || 0;
-      // Ensure a user's negative score doesn't bring down the house total below zero.
-      return acc + Math.max(0, userPoints);
-    }, 0);
+    const totalPoints = h.points || 0;
     return {
       house: h.name,
       points: totalPoints,
