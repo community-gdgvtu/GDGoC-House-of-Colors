@@ -13,12 +13,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { events, getHouseById, type User } from "@/lib/data";
+import { events, type User } from "@/lib/data";
 import { Award, Calendar, Users as UsersIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { collection, getDocs, onSnapshot, query } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { ManagePointsDialog } from "@/components/manage-points-dialog";
+import { HouseSelector } from "@/components/house-selector";
 
 export default function AdminDashboardPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -35,7 +36,7 @@ export default function AdminDashboardPage() {
   }, []);
 
   const totalUsers = users.filter(u => u.role === 'user').length;
-  const totalPoints = users.reduce((acc, user) => acc + user.points, 0);
+  const totalPoints = users.reduce((acc, user) => acc + (user.points > 0 ? user.points : 0), 0);
   const totalEvents = events.length;
 
   return (
@@ -94,42 +95,43 @@ export default function AdminDashboardPage() {
                   <TableCell colSpan={5} className="text-center">Loading...</TableCell>
                 </TableRow>
               ) : (
-                users.map((user) => {
-                  const house = user.houseId ? getHouseById(user.houseId) : null;
-                  return (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage src={user.avatar} alt={user.name} />
-                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                              <div className="font-medium">{user.name}</div>
-                              <div className="text-xs text-muted-foreground">{user.email}</div>
-                          </div>
+                users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={user.avatar} alt={user.name} />
+                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <div className="font-medium">{user.name}</div>
+                            <div className="text-xs text-muted-foreground">{user.email}</div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {user.role === 'admin' ? '-' : (house?.name || 'N/A')}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
-                          {user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right font-medium">{user.points}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        {user.role === 'user' && (
-                          <>
-                            <ManagePointsDialog user={user} mode="add" />
-                            <ManagePointsDialog user={user} mode="deduct" />
-                          </>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {user.role === 'admin' ? (
+                        <span>-</span>
+                      ) : (
+                        <HouseSelector user={user} />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{user.points}</TableCell>
+                    <TableCell className="text-right space-x-2">
+                      {user.role === 'user' && (
+                        <>
+                          <ManagePointsDialog user={user} mode="add" />
+                          <ManagePointsDialog user={user} mode="deduct" />
+                        </>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
               )}
             </TableBody>
           </Table>
