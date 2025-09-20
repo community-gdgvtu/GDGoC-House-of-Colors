@@ -24,10 +24,10 @@ export function HousePageClient({ house }: { house: House }) {
   useEffect(() => {
     if (!house) return;
 
+    // This query is now authorized by the new security rules for all authenticated users.
     const usersQuery = query(
       collection(db, "users"),
       where("houseId", "==", house.id),
-      where("role", "==", "user"),
       orderBy("points", "desc")
     );
 
