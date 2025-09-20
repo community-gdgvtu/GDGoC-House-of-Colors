@@ -33,7 +33,7 @@ interface PointHistory {
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [houses, setHouses] = useState<House[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [pointHistory, setPointHistory] = useState<PointHistory[]>([]);
@@ -42,7 +42,8 @@ export default function DashboardPage() {
   const house = user && user.houseId ? getHouseById(user.houseId) : undefined;
   
   useEffect(() => {
-    if (user) {
+    // Only fetch if auth is done and we have a user
+    if (!authLoading && user) {
       setLoadingHistory(true);
       const q = query(
         collection(db, "users", user.id, "point_history"),
@@ -57,11 +58,11 @@ export default function DashboardPage() {
         setLoadingHistory(false);
       });
       return () => unsubscribe();
-    } else {
-        setPointHistory([]);
-        setLoadingHistory(true);
+    } else if (!authLoading && !user) {
+      // If auth is done and there's no user, stop loading
+      setLoadingHistory(false);
     }
-  }, [user]);
+  }, [user, authLoading]);
 
 
   useEffect(() => {
@@ -110,6 +111,14 @@ export default function DashboardPage() {
     }
   });
 
+
+  if (authLoading) {
+    return (
+       <div className="flex items-center justify-center">
+         <div className="p-4 rounded-lg">Loading dashboard...</div>
+       </div>
+     );
+  }
 
   if (!user) {
     return <PageHeader title="User not found" />;
@@ -224,5 +233,3 @@ export default function DashboardPage() {
     </>
   );
 }
-
-    
