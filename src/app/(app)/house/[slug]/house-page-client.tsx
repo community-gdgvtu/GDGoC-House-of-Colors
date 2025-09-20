@@ -24,7 +24,7 @@ export function HousePageClient({ house }: { house: House }) {
   useEffect(() => {
     if (!house) return;
 
-    // This query is now authorized by the security rules for all authenticated users.
+    // This query is now authorized by the new, correct security rules for all authenticated users.
     // We are filtering by houseId and ordering by points.
     const usersQuery = query(
       collection(db, "users"),
