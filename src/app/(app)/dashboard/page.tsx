@@ -42,7 +42,8 @@ export default function DashboardPage() {
   const house = user && user.houseId ? getHouseById(user.houseId) : undefined;
   
   useEffect(() => {
-    if (user?.id) {
+    if (user) {
+      setLoadingHistory(true);
       const q = query(
         collection(db, "users", user.id, "point_history"),
         orderBy("timestamp", "desc")
@@ -56,8 +57,11 @@ export default function DashboardPage() {
         setLoadingHistory(false);
       });
       return () => unsubscribe();
+    } else {
+        setPointHistory([]);
+        setLoadingHistory(true);
     }
-  }, [user?.id]);
+  }, [user]);
 
 
   useEffect(() => {
