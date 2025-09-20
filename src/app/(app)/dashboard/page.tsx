@@ -28,7 +28,7 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [houses, setHouses] = useState<House[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
-  const [latestRemark, setLatestRemark] = useState<string>("");
+  const [latestRemark, setLatestRemark] = useState<string>("Loading remark...");
 
   const house = user && user.houseId ? getHouseById(user.houseId) : undefined;
   
@@ -46,12 +46,13 @@ export default function DashboardPage() {
         } else {
           setLatestRemark("No points awarded yet.");
         }
+      }, (error) => {
+        console.error("Error fetching latest remark:", error);
+        setLatestRemark("Could not load remark.");
       });
       return () => unsubscribe();
-    } else {
-        setLatestRemark("No points awarded yet.");
     }
-  }, [user]);
+  }, [user?.id]);
 
 
   useEffect(() => {
