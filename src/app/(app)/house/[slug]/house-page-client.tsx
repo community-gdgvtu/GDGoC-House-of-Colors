@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { type User, type House } from "@/lib/data";
 import { db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 export function HousePageClient({ house }: { house: House }) {
@@ -24,16 +24,18 @@ export function HousePageClient({ house }: { house: House }) {
   useEffect(() => {
     if (!house) return;
 
-    // This query is now authorized by the new security rules for all authenticated users.
+    // This query is now authorized by the security rules for all authenticated users.
+    // The orderBy clause has been removed to fix the permission issue.
     const usersQuery = query(
       collection(db, "users"),
-      where("houseId", "==", house.id),
-      orderBy("points", "desc")
+      where("houseId", "==", house.id)
     );
 
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
       const usersData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
-      setMembers(usersData);
+      // Sort members by points on the client-side
+      const sortedMembers = usersData.sort((a, b) => b.points - a.points);
+      setMembers(sortedMembers);
       setLoading(false);
     }, (error) => {
       console.error("Error fetching house members: ", error);
