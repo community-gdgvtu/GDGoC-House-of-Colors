@@ -1,39 +1,61 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+"use client";
+
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { getUserById, houses, User } from "@/lib/data";
+import { houses as staticHouses, User } from "@/lib/data";
 import {
-  BarChart2,
-  Bell,
-  Calendar,
   Home,
   Menu,
   Search,
   Shield,
-  Users,
+  Calendar
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/icons";
 import { UserNav } from "@/components/user-nav";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Button } from "@/components/ui/button";
+import type { House } from "@/lib/data";
+
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const user = getUserById("user_1");
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const [houses, setHouses] = useState<House[]>(staticHouses);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+  
+  useEffect(() => {
+    const fetchHouses = async () => {
+      const querySnapshot = await getDocs(collection(db, "houses"));
+      const housesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as House[];
+      setHouses(housesData);
+    };
+
+    fetchHouses();
+  }, []);
 
   const navItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/events", icon: Calendar, label: "Events" },
   ];
+
+  if (loading || !user) {
+     return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="p-4 rounded-lg">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -131,7 +153,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </form>
           </div>
           <ThemeToggle />
-          <UserNav user={user} />
+          <UserNav />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
           {children}

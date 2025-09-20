@@ -11,14 +11,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { User } from '@/lib/data';
+import { useAuth } from "@/hooks/use-auth";
+import { auth } from "@/lib/firebase";
+import { signOut } from "firebase/auth";
 import Link from 'next/link';
+import { useRouter } from "next/navigation";
 
-interface UserNavProps {
-  user: User | undefined;
-}
+export function UserNav() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-export function UserNav({ user }: UserNavProps) {
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/');
+  };
+
+  if (loading) {
+    return <Button variant="ghost" size="icon" disabled className="h-9 w-9 rounded-full bg-muted"></Button>
+  }
+
   if (!user) {
     return (
       <Button asChild>
@@ -56,8 +67,8 @@ export function UserNav({ user }: UserNavProps) {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href="/">Log out</Link>
+        <DropdownMenuItem onClick={handleLogout}>
+          Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -1,8 +1,8 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { getUserById } from "@/lib/data";
 import {
-  Bell,
   Calendar,
   Home,
   Menu,
@@ -15,9 +15,21 @@ import { Logo } from "@/components/icons";
 import { UserNav } from "@/components/user-nav";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth } from "@/hooks/use-auth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const adminUser = getUserById("user_admin");
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user || user.role !== 'admin') {
+        router.push('/login');
+      }
+    }
+  }, [user, loading, router]);
 
   const navItems = [
     { href: "/admin", icon: Home, label: "Overview" },
@@ -25,6 +37,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "#", icon: Calendar, label: "Events" },
     { href: "#", icon: Settings, label: "Settings" },
   ];
+
+  if (loading || !user) {
+    return (
+     <div className="flex items-center justify-center min-h-screen">
+       <div className="p-4 rounded-lg">Loading...</div>
+     </div>
+   );
+ }
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -100,7 +120,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </form>
           </div>
           <ThemeToggle />
-          <UserNav user={adminUser} />
+          <UserNav />
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
           {children}
