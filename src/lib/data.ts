@@ -1,3 +1,5 @@
+import { PlaceHolderImages } from "./placeholder-images";
+
 export type House = {
   id: string;
   name: string;
