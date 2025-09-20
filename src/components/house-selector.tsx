@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, runTransaction, onSnapshot } from 'firebase/firestore';
+import { collection, runTransaction, doc, onSnapshot, increment } from 'firebase/firestore';
 import type { House, User } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,17 +24,22 @@ export function HouseSelector({ user }: HouseSelectorProps) {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Reverted to onSnapshot for real-time updates now that rules are correct.
+    // This listener provides real-time updates for the house list.
     const unsubscribe = onSnapshot(collection(db, 'houses'), (snapshot) => {
         const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as House));
         setHouses(housesData);
     }, (error) => {
         // This will now correctly fire if there's a permission issue.
         console.error("Failed to fetch houses:", error);
+        toast({
+            title: "Error",
+            description: "Could not fetch house list. Check permissions.",
+            variant: "destructive"
+        });
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [toast]);
 
   const handleHouseChange = async (selectedValue: string) => {
     const newHouseId = selectedValue === "unassigned" ? "" : selectedValue;
@@ -54,18 +59,29 @@ export function HouseSelector({ user }: HouseSelectorProps) {
             }
             const userPoints = userDoc.data().points || 0;
 
+            // 1. Update the user's house assignment
             transaction.update(userRef, { houseId: newHouseId });
 
-            // Decrement points from the old house, if it exists
+            // 2. Decrement points from the old house, if it exists
             if (oldHouseId) {
                 const oldHouseRef = doc(db, "houses", oldHouseId);
-                transaction.update(oldHouseRef, { points: -userPoints });
+                const oldHouseDoc = await transaction.get(oldHouseRef);
+                if (oldHouseDoc.exists()) {
+                    transaction.update(oldHouseRef, { points: increment(-userPoints) });
+                } else {
+                    console.warn(`Old house document (ID: ${oldHouseId}) not found. Skipping point deduction.`);
+                }
             }
 
-            // Increment points for the new house, if it exists
+            // 3. Increment points for the new house, if it exists
             if (newHouseId) {
                 const newHouseRef = doc(db, "houses", newHouseId);
-                transaction.update(newHouseRef, { points: userPoints });
+                const newHouseDoc = await transaction.get(newHouseRef);
+                if (newHouseDoc.exists()) {
+                    transaction.update(newHouseRef, { points: increment(userPoints) });
+                } else {
+                    console.warn(`New house document (ID: ${newHouseId}) not found. Skipping point addition.`);
+                }
             }
         });
 

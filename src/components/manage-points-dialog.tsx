@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { type User } from "@/lib/data";
 import { db } from "@/lib/firebase";
-import { doc, updateDoc, collection, addDoc, serverTimestamp, increment, runTransaction, getDoc } from "firebase/firestore";
+import { doc, collection, serverTimestamp, increment, runTransaction } from "firebase/firestore";
 import { PlusCircle, MinusCircle } from "lucide-react";
 
 interface ManagePointsDialogProps {
@@ -85,12 +85,17 @@ export function ManagePointsDialog({ user, mode }: ManagePointsDialogProps) {
                 timestamp: serverTimestamp(),
             });
 
-            // Update house total points if user is in a house
+            // Update house total points if user is in a house and the house exists
             if (user.houseId) {
                 const houseRef = doc(db, "houses", user.houseId);
-                transaction.update(houseRef, {
-                    points: increment(pointsToLog)
-                });
+                const houseDoc = await transaction.get(houseRef);
+                if (houseDoc.exists()) {
+                    transaction.update(houseRef, {
+                        points: increment(pointsToLog)
+                    });
+                } else {
+                    console.warn(`House document (ID: ${user.houseId}) not found. Skipping house point update.`);
+                }
             }
         });
 
