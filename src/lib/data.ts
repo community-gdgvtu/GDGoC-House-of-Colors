@@ -7,6 +7,8 @@ export type House = {
   bgColor: string;
   textColor: string;
   borderColor: string;
+  president: string;
+  houseCaptain: string;
 };
 
 export type User = {
@@ -28,10 +30,10 @@ export type Event = {
 };
 
 export const houses: House[] = [
-  { id: 'red', name: 'Red Raptors', color: '#F44336', bgColor: 'bg-red-500', textColor: 'text-white', borderColor: 'border-red-500' },
-  { id: 'yellow', name: 'Yellow Strikers', color: '#FFEB3B', bgColor: 'bg-yellow-400', textColor: 'text-gray-800', borderColor: 'border-yellow-400' },
-  { id: 'green', name: 'Green Geckos', color: '#4CAF50', bgColor: 'bg-green-500', textColor: 'text-white', borderColor: 'border-green-500' },
-  { id: 'blue', name: 'Blue Blasters', color: '#2196F3', bgColor: 'bg-blue-500', textColor: 'text-white', borderColor: 'border-blue-500' },
+  { id: 'red', name: 'Red Raptors', color: '#F44336', bgColor: 'bg-red-500', textColor: 'text-white', borderColor: 'border-red-500', president: 'Alice', houseCaptain: 'Bob' },
+  { id: 'yellow', name: 'Yellow Strikers', color: '#FFEB3B', bgColor: 'bg-yellow-400', textColor: 'text-gray-800', borderColor: 'border-yellow-400', president: 'Charlie', houseCaptain: 'Dave' },
+  { id: 'green', name: 'Green Geckos', color: '#4CAF50', bgColor: 'bg-green-500', textColor: 'text-white', borderColor: 'border-green-500', president: 'Eve', houseCaptain: 'Frank' },
+  { id: 'blue', name: 'Blue Blasters', color: '#2196F3', bgColor: 'bg-blue-500', textColor: 'text-white', borderColor: 'border-blue-500', president: 'Grace', houseCaptain: 'Heidi' },
 ];
 
 export const users: User[] = [

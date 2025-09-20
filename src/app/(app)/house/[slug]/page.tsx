@@ -28,6 +28,16 @@ export default function HousePage({ params }: { params: { slug: string } }) {
           description={`Meet the members of the mighty ${house.name}.`}
           className={`${house.textColor}`}
         />
+        <div className={`mt-4 grid grid-cols-2 gap-4 ${house.textColor}`}>
+            <div>
+                <h3 className="font-bold text-lg">President</h3>
+                <p>{house.president}</p>
+            </div>
+            <div>
+                <h3 className="font-bold text-lg">House Captain</h3>
+                <p>{house.houseCaptain}</p>
+            </div>
+        </div>
       </div>
       <Card>
         <CardContent>
