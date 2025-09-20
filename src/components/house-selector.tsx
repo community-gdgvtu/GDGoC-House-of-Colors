@@ -29,6 +29,14 @@ export function HouseSelector({ user }: HouseSelectorProps) {
       const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as House));
       setHouses(housesData);
       setLoading(false);
+    }, (error) => {
+      console.error("Error fetching houses in HouseSelector:", error);
+      toast({
+        title: "Error fetching houses",
+        description: "Could not load house list. Check console for details.",
+        variant: "destructive"
+      })
+      setLoading(false);
     });
 
     return () => unsub();
