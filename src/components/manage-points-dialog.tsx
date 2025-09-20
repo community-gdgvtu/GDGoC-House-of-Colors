@@ -58,8 +58,12 @@ export function ManagePointsDialog({ user, mode }: ManagePointsDialogProps) {
     try {
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "users", user.id);
-            const userDoc = await transaction.get(userRef);
+            const houseRef = user.houseId ? doc(db, "houses", user.houseId) : null;
 
+            // 1. Perform all reads first
+            const userDoc = await transaction.get(userRef);
+            const houseDoc = houseRef ? await transaction.get(houseRef) : null;
+            
             if (!userDoc.exists()) {
                 throw new Error("User does not exist!");
             }
@@ -67,17 +71,15 @@ export function ManagePointsDialog({ user, mode }: ManagePointsDialogProps) {
             const currentPoints = userDoc.data().points || 0;
             let pointsToLog = isAddMode ? points : -points;
             
-            // Prevent user points from going below zero
             if (!isAddMode && currentPoints < points) {
-                pointsToLog = -currentPoints; // Only deduct what's available
+                pointsToLog = -currentPoints;
             }
 
-            // Update user's points
+            // 2. Perform all writes
             transaction.update(userRef, {
                 points: increment(pointsToLog)
             });
 
-            // Add to user's point history
             const pointHistoryRef = collection(db, "users", user.id, "point_history");
             transaction.set(doc(pointHistoryRef), {
                 pointsAdded: pointsToLog,
@@ -85,17 +87,10 @@ export function ManagePointsDialog({ user, mode }: ManagePointsDialogProps) {
                 timestamp: serverTimestamp(),
             });
 
-            // Update house total points if user is in a house and the house exists
-            if (user.houseId) {
-                const houseRef = doc(db, "houses", user.houseId);
-                const houseDoc = await transaction.get(houseRef);
-                if (houseDoc.exists()) {
-                    transaction.update(houseRef, {
-                        points: increment(pointsToLog)
-                    });
-                } else {
-                    console.warn(`House document (ID: ${user.houseId}) not found. Skipping house point update.`);
-                }
+            if (houseRef && houseDoc?.exists()) {
+                transaction.update(houseRef, {
+                    points: increment(pointsToLog)
+                });
             }
         });
 
