@@ -1,15 +1,8 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   ChartContainer,
   ChartTooltip,
@@ -17,15 +10,68 @@ import {
   ChartConfig,
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { getUserById, getHouseById, users, houses } from "@/lib/data";
-import { Award, Shield, User as UserIcon } from "lucide-react";
+import { getHouseById, users, houses as staticHouses, House } from "@/lib/data";
+import { Award, Shield, User as UserIcon, MessageSquareQuote } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useEffect, useState } from "react";
+import { collection, getDocs, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+interface PointHistory {
+  id: string;
+  pointsAdded: number;
+  remark: string;
+  timestamp: any;
+}
 
 export default function DashboardPage() {
-  const user = getUserById("user_1");
-  const house = user ? getHouseById(user.houseId) : undefined;
+  const { user } = useAuth();
+  const [houses, setHouses] = useState<House[]>(staticHouses);
+  const [allUsers, setAllUsers] = useState<any[]>(users);
+  const [latestRemark, setLatestRemark] = useState<string>("");
+
+  const house = user && user.houseId ? getHouseById(user.houseId) : undefined;
+  
+  useEffect(() => {
+    if (user?.id) {
+      const q = query(
+        collection(db, "users", user.id, "point_history"),
+        orderBy("timestamp", "desc"),
+        limit(1)
+      );
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        if (!querySnapshot.empty) {
+          const latest = querySnapshot.docs[0].data() as PointHistory;
+          setLatestRemark(latest.remark);
+        } else {
+          setLatestRemark("No points awarded yet.");
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, [user?.id]);
+
+
+  useEffect(() => {
+    const fetchHousesAndUsers = async () => {
+        const housesQuery = query(collection(db, "houses"));
+        const usersQuery = query(collection(db, "users"));
+        
+        onSnapshot(housesQuery, (snapshot) => {
+            const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as House[];
+            setHouses(housesData);
+        });
+
+        onSnapshot(usersQuery, (snapshot) => {
+            const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setAllUsers(usersData);
+        });
+    }
+    fetchHousesAndUsers();
+  }, []);
 
   const housePoints = houses.map(h => {
-    const houseUsers = users.filter(u => u.houseId === h.id);
+    const houseUsers = allUsers.filter(u => u.houseId === h.id);
     const totalPoints = houseUsers.reduce((acc, u) => acc + u.points, 0);
     return {
       house: h.name,
@@ -40,7 +86,6 @@ export default function DashboardPage() {
     },
   } as ChartConfig;
   
-  // Add house colors to chart config dynamically
   housePoints.forEach(item => {
     chartConfig[item.house] = {
       label: item.house,
@@ -78,6 +123,16 @@ export default function DashboardPage() {
           <CardContent>
             <div className={`text-2xl font-bold`}>{house?.name}</div>
             <p className={`text-xs`} style={{color: house?.color}}>Proud member of the {house?.name}</p>
+          </CardContent>
+        </Card>
+        <Card className="md:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Latest Update</CardTitle>
+            <MessageSquareQuote className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-xl font-bold truncate" title={latestRemark}>{latestRemark}</div>
+            <p className="text-xs text-muted-foreground">Reason for your latest points.</p>
           </CardContent>
         </Card>
       </div>
