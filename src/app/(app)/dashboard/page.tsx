@@ -18,7 +18,7 @@ import {
   ChartConfig,
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { getHouseById, House } from "@/lib/data";
+import { type House } from "@/lib/data";
 import { Award, Shield, History } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
@@ -38,35 +38,34 @@ export default function DashboardPage() {
   const [pointHistory, setPointHistory] = useState<PointHistory[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
 
-  const house = user && user.houseId ? getHouseById(user.houseId) : undefined;
-  
+  // Effect for fetching point history
   useEffect(() => {
-    // Only fetch if auth is done and we have a user
-    if (!authLoading && user) {
-      setLoadingHistory(true);
-      
-      const pointHistoryQuery = query(
-        collection(db, "users", user.id, "point_history"),
-        orderBy("timestamp", "desc")
-      );
-
-      const unsubscribe = onSnapshot(pointHistoryQuery, (querySnapshot) => {
-        const historyData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as PointHistory[];
-        setPointHistory(historyData);
-        setLoadingHistory(false);
-      }, (error) => {
-        console.error("Error fetching point history:", error);
-        setLoadingHistory(false);
-      });
-
-      return () => unsubscribe();
-    } else if (!authLoading && !user) {
-      // If auth is done and there's no user, stop loading
+    if (authLoading) return; // Wait for auth to be ready
+    if (!user) {
+      setPointHistory([]);
       setLoadingHistory(false);
+      return;
     }
+
+    setLoadingHistory(true);
+    const pointHistoryQuery = query(
+      collection(db, "users", user.id, "point_history"),
+      orderBy("timestamp", "desc")
+    );
+
+    const unsubscribe = onSnapshot(pointHistoryQuery, (querySnapshot) => {
+      const historyData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as PointHistory[];
+      setPointHistory(historyData);
+      setLoadingHistory(false);
+    }, (error) => {
+      console.error("Error fetching point history:", error);
+      setLoadingHistory(false);
+    });
+
+    return () => unsubscribe();
   }, [user, authLoading]);
 
-
+  // Effect for fetching house standings
   useEffect(() => {
     const housesQuery = query(collection(db, "houses"), orderBy("points", "desc"));
     const unsubHouses = onSnapshot(housesQuery, (snapshot) => {
@@ -76,40 +75,39 @@ export default function DashboardPage() {
 
     return () => unsubHouses();
   }, []);
+  
+  const userHouse = houses.find(h => h.id === user?.houseId);
 
-  const housePoints = houses.map(h => {
-    const totalPoints = h.points || 0;
-    return {
-      house: h.name,
-      points: totalPoints,
-      fill: h.color,
-    };
-  });
+  const housePoints = houses.map(h => ({
+    house: h.name,
+    points: h.points >= 0 ? h.points : 0, // Ensure points are not negative
+    fill: h.color,
+  }));
   
   const chartConfig: ChartConfig = {
     points: {
       label: "Points",
     },
+    ...housePoints.reduce((acc, cur) => {
+      acc[cur.house] = { label: cur.house, color: cur.fill };
+      return acc;
+    }, {} as ChartConfig)
   };
-  
-  housePoints.forEach(item => {
-    chartConfig[item.house] = {
-      label: item.house,
-      color: item.fill,
-    }
-  });
-
 
   if (authLoading) {
     return (
-       <div className="flex items-center justify-center">
+       <div className="flex items-center justify-center h-full">
          <div className="p-4 rounded-lg">Loading dashboard...</div>
        </div>
      );
   }
 
   if (!user) {
-    return <PageHeader title="User not found" />;
+    return (
+        <div className="flex items-center justify-center h-full">
+            <PageHeader title="User not found or not logged in." />
+        </div>
+    );
   }
 
   return (
@@ -135,8 +133,10 @@ export default function DashboardPage() {
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold`}>{house?.name}</div>
-            <p className={`text-xs`} style={{color: house?.color}}>Proud member of the {house?.name}</p>
+            <div className={`text-2xl font-bold`}>{userHouse?.name || 'Unassigned'}</div>
+            <p className={`text-xs`} style={{color: userHouse?.color}}>
+                {userHouse ? `Proud member of the ${userHouse.name}` : 'You have not been assigned to a house yet.'}
+            </p>
           </CardContent>
         </Card>
       </div>
