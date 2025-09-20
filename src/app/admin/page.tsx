@@ -1,3 +1,6 @@
+
+"use client";
+
 import { PageHeader } from "@/components/page-header";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +13,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { events, getHouseById, users } from "@/lib/data";
+import { events, getHouseById, type User } from "@/lib/data";
 import { Award, Calendar, Users as UsersIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import { collection, getDocs, onSnapshot, query } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { AddPointsDialog } from "@/components/add-points-dialog";
 
 export default function AdminDashboardPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const q = query(collection(db, "users"));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const usersData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
+      setUsers(usersData);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
   const totalUsers = users.filter(u => u.role === 'user').length;
   const totalPoints = users.reduce((acc, user) => acc + user.points, 0);
   const totalEvents = events.length;
@@ -65,35 +85,45 @@ export default function AdminDashboardPage() {
                 <TableHead>House</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead className="text-right">Points</TableHead>
+                <TableHead className="w-[120px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => {
-                const house = user.houseId ? getHouseById(user.houseId) : null;
-                return (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src={user.avatar} alt={user.name} />
-                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <div className="font-medium">{user.name}</div>
-                            <div className="text-xs text-muted-foreground">{user.email}</div>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center">Loading...</TableCell>
+                </TableRow>
+              ) : (
+                users.map((user) => {
+                  const house = user.houseId ? getHouseById(user.houseId) : null;
+                  return (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarImage src={user.avatar} alt={user.name} />
+                            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                              <div className="font-medium">{user.name}</div>
+                              <div className="text-xs text-muted-foreground">{user.email}</div>
+                          </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{house?.name || 'N/A'}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">{user.points}</TableCell>
-                  </TableRow>
-                );
-              })}
+                      </TableCell>
+                      <TableCell>{house?.name || 'N/A'}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
+                          {user.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">{user.points}</TableCell>
+                      <TableCell className="text-right">
+                        {user.role === 'user' && <AddPointsDialog user={user} />}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
             </TableBody>
           </Table>
         </CardContent>
