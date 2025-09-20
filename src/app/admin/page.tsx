@@ -110,7 +110,9 @@ export default function AdminDashboardPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{house?.name || 'N/A'}</TableCell>
+                      <TableCell>
+                        {user.role === 'admin' ? '-' : (house?.name || 'N/A')}
+                      </TableCell>
                       <TableCell>
                         <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
                           {user.role}
