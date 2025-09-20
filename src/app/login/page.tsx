@@ -12,7 +12,8 @@ import { Logo } from "@/components/icons";
 import { auth } from "@/lib/firebase";
 import { 
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword 
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/use-auth";
@@ -55,6 +56,31 @@ export default function LoginPage() {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!email) {
+      toast({
+        title: "Email required",
+        description: "Please enter your email address to reset your password.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Password Reset Email Sent",
+        description: "Check your inbox for a link to reset your password.",
+      });
+    } catch (error: any) {
+      console.error("Error sending password reset email:", error);
+      toast({
+        title: "Password Reset Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     if (!loading && user) {
         if (user.role === 'admin') {
@@ -85,7 +111,12 @@ export default function LoginPage() {
                     <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={e => setEmail(e.target.value)} />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <div className="flex items-center">
+                      <Label htmlFor="password">Password</Label>
+                      <button onClick={handlePasswordReset} className="ml-auto inline-block text-sm underline">
+                        Forgot your password?
+                      </button>
+                    </div>
                     <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} />
                 </div>
                 <div className="flex gap-2">
@@ -107,4 +138,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
