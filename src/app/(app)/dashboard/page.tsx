@@ -10,7 +10,7 @@ import {
   ChartConfig,
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { getHouseById, users as staticUsers, House, houses as staticHouses } from "@/lib/data";
+import { getHouseById, House } from "@/lib/data";
 import { Award, Shield, MessageSquareQuote } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
