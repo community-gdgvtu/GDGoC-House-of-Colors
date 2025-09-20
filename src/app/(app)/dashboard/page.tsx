@@ -93,7 +93,11 @@ export default function DashboardPage() {
 
   const housePoints = houses.map(h => {
     const houseUsers = allUsers.filter(u => u.houseId === h.id);
-    const totalPoints = houseUsers.reduce((acc, u) => acc + (u.points || 0), 0);
+    const totalPoints = houseUsers.reduce((acc, u) => {
+      const userPoints = u.points || 0;
+      // Ensure a user's negative score doesn't bring down the house total below zero.
+      return acc + Math.max(0, userPoints);
+    }, 0);
     return {
       house: h.name,
       points: totalPoints,
