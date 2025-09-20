@@ -68,9 +68,9 @@ export default function DashboardPage() {
 
 
   useEffect(() => {
-    const housesQuery = query(collection(db, "houses"));
+    const housesQuery = query(collection(db, "houses"), orderBy("points", "desc"));
     const unsubHouses = onSnapshot(housesQuery, (snapshot) => {
-        const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as House[];
+        const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), points: doc.data().points || 0 })) as House[];
         setHouses(housesData);
     });
 
