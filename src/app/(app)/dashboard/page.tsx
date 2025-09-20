@@ -218,7 +218,9 @@ export default function DashboardPage() {
                       <TableCell className="text-xs text-muted-foreground">
                         {item.timestamp?.toDate().toLocaleDateString()}
                       </TableCell>
-                      <TableCell className="text-right font-bold">+{item.pointsAdded}</TableCell>
+                      <TableCell className={`text-right font-bold ${item.pointsAdded > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {item.pointsAdded > 0 ? `+${item.pointsAdded}` : item.pointsAdded}
+                      </TableCell>
                     </TableRow>
                   ))
                 ) : (

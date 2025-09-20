@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { type User } from "@/lib/data";
 import { db } from "@/lib/firebase";
-import { doc, updateDoc, collection, addDoc, serverTimestamp, increment } from "firebase/firestore";
+import { doc, updateDoc, collection, addDoc, serverTimestamp, increment, getDoc } from "firebase/firestore";
 import { PlusCircle, MinusCircle } from "lucide-react";
 
 interface ManagePointsDialogProps {
@@ -54,25 +54,41 @@ export function ManagePointsDialog({ user, mode }: ManagePointsDialogProps) {
     }
 
     setLoading(true);
-    const pointsToApply = isAddMode ? points : -points;
-
+    
     try {
       const userRef = doc(db, "users", user.id);
       const pointHistoryRef = collection(db, "users", user.id, "point_history");
 
+      // Check current points if deducting
+      if (!isAddMode) {
+        const userDoc = await getDoc(userRef);
+        const currentPoints = userDoc.data()?.points || 0;
+        if (currentPoints < points) {
+           toast({
+            title: "Insufficient Points",
+            description: `Cannot deduct ${points} points. User only has ${currentPoints}. User points will be set to 0.`,
+            variant: "destructive",
+          });
+        }
+      }
+
+      const newPoints = isAddMode ? increment(points) : increment(-Math.min(user.points, points));
+      const pointsToLog = isAddMode ? points : -Math.min(user.points, points);
+
+
       await updateDoc(userRef, {
-        points: increment(pointsToApply),
+        points: newPoints,
       });
 
       await addDoc(pointHistoryRef, {
-        pointsAdded: pointsToApply,
+        pointsAdded: pointsToLog,
         remark: remark,
         timestamp: serverTimestamp(),
       });
 
       toast({
         title: `Points ${isAddMode ? 'Awarded' : 'Deducted'}!`,
-        description: `${points} points have been successfully ${isAddMode ? 'awarded to' : 'deducted from'} ${user.name}.`,
+        description: `${Math.abs(pointsToLog)} points have been successfully ${isAddMode ? 'awarded to' : 'deducted from'} ${user.name}.`,
       });
       
       setPoints(0);
@@ -102,7 +118,7 @@ export function ManagePointsDialog({ user, mode }: ManagePointsDialogProps) {
         <DialogHeader>
           <DialogTitle>{isAddMode ? 'Add' : 'Deduct'} Points for {user.name}</DialogTitle>
           <DialogDescription>
-            {isAddMode ? 'Award points for participation, wins, or other contributions.' : 'Deduct points for penalties or corrections.'}
+            {isAddMode ? 'Award points for participation, wins, or other contributions.' : 'Deduct points for penalties or corrections. Points cannot go below zero.'}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
