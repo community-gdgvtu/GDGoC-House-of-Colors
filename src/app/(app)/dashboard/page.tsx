@@ -22,7 +22,7 @@ import { getHouseById, House } from "@/lib/data";
 import { Award, Shield, History } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, orderBy, Timestamp } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, Timestamp, where, collectionGroup } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface PointHistory {
@@ -45,11 +45,17 @@ export default function DashboardPage() {
     // Only fetch if auth is done and we have a user
     if (!authLoading && user) {
       setLoadingHistory(true);
-      const q = query(
-        collection(db, "users", user.id, "point_history"),
+      
+      // Use a collectionGroup query to get point_history across all users,
+      // then filter it for the current user. This is required for the security rules to work.
+      const pointHistoryQuery = query(
+        collectionGroup(db, "point_history"),
+        where('__name__', '>=', `users/${user.id}/point_history/`),
+        where('__name__', '<', `users/${user.id}/point_history0`),
         orderBy("timestamp", "desc")
       );
-      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+
+      const unsubscribe = onSnapshot(pointHistoryQuery, (querySnapshot) => {
         const historyData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as PointHistory[];
         setPointHistory(historyData);
         setLoadingHistory(false);
