@@ -10,7 +10,7 @@ import {
   ChartConfig,
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { getHouseById, users as staticUsers, House } from "@/lib/data";
+import { getHouseById, users as staticUsers, House, houses as staticHouses } from "@/lib/data";
 import { Award, Shield, MessageSquareQuote } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
@@ -26,8 +26,8 @@ interface PointHistory {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const [houses, setHouses] = useState<House[]>(staticHouses);
-  const [allUsers, setAllUsers] = useState<any[]>(staticUsers);
+  const [houses, setHouses] = useState<House[]>([]);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
   const [latestRemark, setLatestRemark] = useState<string>("");
 
   const house = user && user.houseId ? getHouseById(user.houseId) : undefined;
