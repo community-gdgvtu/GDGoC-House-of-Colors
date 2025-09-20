@@ -4,6 +4,14 @@
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -11,24 +19,25 @@ import {
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { getHouseById, House } from "@/lib/data";
-import { Award, Shield, MessageSquareQuote } from "lucide-react";
+import { Award, Shield, History } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface PointHistory {
   id: string;
   pointsAdded: number;
   remark: string;
-  timestamp: any;
+  timestamp: Timestamp;
 }
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const [houses, setHouses] = useState<House[]>([]);
   const [allUsers, setAllUsers] = useState<any[]>([]);
-  const [latestRemark, setLatestRemark] = useState<string>("Loading remark...");
+  const [pointHistory, setPointHistory] = useState<PointHistory[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
 
   const house = user && user.houseId ? getHouseById(user.houseId) : undefined;
   
@@ -36,19 +45,15 @@ export default function DashboardPage() {
     if (user?.id) {
       const q = query(
         collection(db, "users", user.id, "point_history"),
-        orderBy("timestamp", "desc"),
-        limit(1)
+        orderBy("timestamp", "desc")
       );
       const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        if (!querySnapshot.empty) {
-          const latest = querySnapshot.docs[0].data() as PointHistory;
-          setLatestRemark(latest.remark);
-        } else {
-          setLatestRemark("No points awarded yet.");
-        }
+        const historyData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as PointHistory[];
+        setPointHistory(historyData);
+        setLoadingHistory(false);
       }, (error) => {
-        console.error("Error fetching latest remark:", error);
-        setLatestRemark("Could not load remark.");
+        console.error("Error fetching point history:", error);
+        setLoadingHistory(false);
       });
       return () => unsubscribe();
     }
@@ -123,7 +128,7 @@ export default function DashboardPage() {
             <p className="text-xs text-muted-foreground">Keep up the great work!</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="md:col-span-3">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Your House</CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
@@ -131,16 +136,6 @@ export default function DashboardPage() {
           <CardContent>
             <div className={`text-2xl font-bold`}>{house?.name}</div>
             <p className={`text-xs`} style={{color: house?.color}}>Proud member of the {house?.name}</p>
-          </CardContent>
-        </Card>
-        <Card className="md:col-span-2">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Latest Update</CardTitle>
-            <MessageSquareQuote className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold truncate" title={latestRemark}>{latestRemark}</div>
-            <p className="text-xs text-muted-foreground">Reason for your latest points.</p>
           </CardContent>
         </Card>
       </div>
@@ -179,7 +174,51 @@ export default function DashboardPage() {
             </ChartContainer>
           </CardContent>
         </Card>
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                Point History
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Points</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loadingHistory ? (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center">Loading history...</TableCell>
+                  </TableRow>
+                ) : pointHistory.length > 0 ? (
+                  pointHistory.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium truncate max-w-[150px]" title={item.remark}>{item.remark}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {item.timestamp?.toDate().toLocaleDateString()}
+                      </TableCell>
+                      <TableCell className="text-right font-bold">+{item.pointsAdded}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                      No points awarded yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </div>
     </>
   );
 }
+
+    
