@@ -1,10 +1,24 @@
 
 import { notFound } from "next/navigation";
-import { getHouseById } from "@/lib/data";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import { HousePageClient } from "./house-page-client";
+import { type House } from "@/lib/data";
 
-export default function HousePage({ params }: { params: { slug: string } }) {
-  const house = getHouseById(params.slug);
+async function getHouseFromFirestore(id: string): Promise<House | null> {
+    const docRef = doc(db, "houses", id);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() } as House;
+    } else {
+        return null;
+    }
+}
+
+
+export default async function HousePage({ params }: { params: { slug: string } }) {
+  const house = await getHouseFromFirestore(params.slug);
 
   if (!house) {
     notFound();

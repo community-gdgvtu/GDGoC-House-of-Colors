@@ -1,7 +1,7 @@
 "use client";
 
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { houses as staticHouses, User } from "@/lib/data";
+import { User } from "@/lib/data";
 import {
   Home,
   Menu,
@@ -17,7 +17,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import type { House } from "@/lib/data";
@@ -26,7 +26,7 @@ import type { House } from "@/lib/data";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [houses, setHouses] = useState<House[]>(staticHouses);
+  const [houses, setHouses] = useState<House[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -35,13 +35,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user, loading, router]);
   
   useEffect(() => {
-    const fetchHouses = async () => {
-      const querySnapshot = await getDocs(collection(db, "houses"));
-      const housesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as House[];
+    const unsub = onSnapshot(collection(db, "houses"), (snapshot) => {
+      const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as House[];
       setHouses(housesData);
-    };
+    });
 
-    fetchHouses();
+    return () => unsub();
   }, []);
 
   const navItems = [
