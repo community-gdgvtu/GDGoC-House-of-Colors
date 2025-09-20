@@ -14,21 +14,13 @@ import {
 } from "@/components/ui/table";
 import { getHouseById, type User, type House } from "@/lib/data";
 import { db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, limit, orderBy } from "firebase/firestore";
+import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { notFound } from "next/navigation";
 
-interface PointHistory {
-  remark: string;
-}
-
-interface UserWithRemark extends User {
-  latestRemark?: string;
-}
-
 export default function HousePage({ params }: { params: { slug: string } }) {
   const house = getHouseById(params.slug);
-  const [members, setMembers] = useState<UserWithRemark[]>([]);
+  const [members, setMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,32 +29,17 @@ export default function HousePage({ params }: { params: { slug: string } }) {
     const usersQuery = query(
       collection(db, "users"),
       where("houseId", "==", house.id),
-      where("role", "==", "user")
+      where("role", "==", "user"),
+      orderBy("points", "desc")
     );
 
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
       const usersData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
-      const sortedUsers = usersData.sort((a, b) => b.points - a.points);
-      setMembers(sortedUsers);
+      setMembers(usersData);
       setLoading(false);
-
-      // For each user, get the latest remark
-      sortedUsers.forEach(user => {
-        const remarksQuery = query(
-          collection(db, "users", user.id, "point_history"),
-          orderBy("timestamp", "desc"),
-          limit(1)
-        );
-
-        onSnapshot(remarksQuery, (remarksSnapshot) => {
-          if (!remarksSnapshot.empty) {
-            const latestRemark = remarksSnapshot.docs[0].data() as PointHistory;
-            setMembers(prevMembers => prevMembers.map(m => 
-                m.id === user.id ? { ...m, latestRemark: latestRemark.remark } : m
-            ));
-          }
-        });
-      });
+    }, (error) => {
+      console.error("Error fetching house members: ", error);
+      setLoading(false);
     });
 
     return () => unsubscribeUsers();
@@ -98,18 +75,17 @@ export default function HousePage({ params }: { params: { slug: string } }) {
               <TableRow>
                 <TableHead className="w-[80px]">Rank</TableHead>
                 <TableHead>Member</TableHead>
-                <TableHead>Latest Reason</TableHead>
                 <TableHead className="text-right">Points</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">Loading members...</TableCell>
+                  <TableCell colSpan={3} className="text-center">Loading members...</TableCell>
                 </TableRow>
               ) : members.length === 0 ? (
                  <TableRow>
-                  <TableCell colSpan={4} className="text-center">No members in this house yet.</TableCell>
+                  <TableCell colSpan={3} className="text-center">No members in this house yet.</TableCell>
                 </TableRow>
               ) : (
                 members.map((member, index) => (
@@ -123,9 +99,6 @@ export default function HousePage({ params }: { params: { slug: string } }) {
                         </Avatar>
                         <div className="font-medium">{member.name}</div>
                       </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs truncate max-w-[200px]" title={member.latestRemark}>
-                      {member.latestRemark || 'N/A'}
                     </TableCell>
                     <TableCell className="text-right font-bold">{member.points}</TableCell>
                   </TableRow>
