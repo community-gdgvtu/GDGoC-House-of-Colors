@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { db } from '@/lib/firebase';
-import { collection, getDocs, doc, runTransaction } from 'firebase/firestore';
+import { collection, getDocs, doc, runTransaction, onSnapshot } from 'firebase/firestore';
 import type { House, User } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,32 +20,20 @@ interface HouseSelectorProps {
 
 export function HouseSelector({ user }: HouseSelectorProps) {
   const [houses, setHouses] = useState<House[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    const fetchHouses = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const querySnapshot = await getDocs(collection(db, 'houses'));
-        if (querySnapshot.empty) {
-            setError("No houses found in database.");
-        } else {
-            const housesData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as House));
-            setHouses(housesData);
-        }
-      } catch (e: any) {
-        console.error("Failed to fetch houses:", e);
-        setError("Failed to load houses.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    // Reverted to onSnapshot for real-time updates now that rules are correct.
+    const unsubscribe = onSnapshot(collection(db, 'houses'), (snapshot) => {
+        const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as House));
+        setHouses(housesData);
+    }, (error) => {
+        // This will now correctly fire if there's a permission issue.
+        console.error("Failed to fetch houses:", error);
+    });
 
-    fetchHouses();
+    return () => unsubscribe();
   }, []);
 
   const handleHouseChange = async (selectedValue: string) => {
@@ -68,22 +56,16 @@ export function HouseSelector({ user }: HouseSelectorProps) {
 
             transaction.update(userRef, { houseId: newHouseId });
 
+            // Decrement points from the old house, if it exists
             if (oldHouseId) {
                 const oldHouseRef = doc(db, "houses", oldHouseId);
-                const oldHouseDoc = await transaction.get(oldHouseRef);
-                if (oldHouseDoc.exists()) {
-                    const currentPoints = oldHouseDoc.data().points || 0;
-                    transaction.update(oldHouseRef, { points: currentPoints - userPoints });
-                }
+                transaction.update(oldHouseRef, { points: -userPoints });
             }
 
+            // Increment points for the new house, if it exists
             if (newHouseId) {
                 const newHouseRef = doc(db, "houses", newHouseId);
-                const newHouseDoc = await transaction.get(newHouseRef);
-                 if (newHouseDoc.exists()) {
-                    const currentPoints = newHouseDoc.data().points || 0;
-                    transaction.update(newHouseRef, { points: currentPoints + userPoints });
-                }
+                transaction.update(newHouseRef, { points: userPoints });
             }
         });
 
@@ -105,24 +87,14 @@ export function HouseSelector({ user }: HouseSelectorProps) {
   
   const selectValue = user.houseId || "unassigned";
 
-  if (loading || error) {
-    return (
-      <Select disabled>
-        <SelectTrigger className="w-[150px]">
-          <SelectValue placeholder={loading ? "Loading houses..." : error} />
-        </SelectTrigger>
-      </Select>
-    );
-  }
-
   return (
     <Select
       value={selectValue}
       onValueChange={handleHouseChange}
-      disabled={isUpdating}
+      disabled={isUpdating || houses.length === 0}
     >
       <SelectTrigger className="w-[150px]">
-        <SelectValue placeholder="Select a house" />
+        <SelectValue placeholder={houses.length > 0 ? "Select a house" : "Loading..."} />
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="unassigned">
