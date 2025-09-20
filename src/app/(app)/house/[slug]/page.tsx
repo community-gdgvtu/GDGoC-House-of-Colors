@@ -1,0 +1,64 @@
+import { PageHeader } from "@/components/page-header";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { getHouseById, getUsersByHouse } from "@/lib/data";
+import { notFound } from "next/navigation";
+
+export default function HousePage({ params }: { params: { slug: string } }) {
+  const house = getHouseById(params.slug);
+  if (!house) {
+    notFound();
+  }
+
+  const members = getUsersByHouse(params.slug).sort((a, b) => b.points - a.points);
+
+  return (
+    <div className="space-y-6">
+      <div className={`p-6 rounded-lg`} style={{ backgroundColor: house.color }}>
+        <PageHeader
+          title={`${house.name}`}
+          description={`Meet the members of the mighty ${house.name}.`}
+          className={`${house.textColor}`}
+        />
+      </div>
+      <Card>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[80px]">Rank</TableHead>
+                <TableHead>Member</TableHead>
+                <TableHead className="text-right">Points</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {members.map((member, index) => (
+                <TableRow key={member.id}>
+                  <TableCell className="font-medium">{index + 1}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={member.avatar} alt={member.name} />
+                        <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="font-medium">{member.name}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right font-bold">{member.points}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -1,3 +1,35 @@
+
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-1",
+      "description": "A hero image for the landing page showing students collaborating.",
+      "imageUrl": "https://picsum.photos/seed/hero1/1200/800",
+      "imageHint": "students collaboration"
+    },
+    {
+      "id": "event-1",
+      "description": "Image for Flutter Forward event",
+      "imageUrl": "https://picsum.photos/seed/event1/600/400",
+      "imageHint": "mobile development"
+    },
+    {
+      "id": "event-2",
+      "description": "Image for Intro to Google Cloud event",
+      "imageUrl": "https://picsum.photos/seed/event2/600/400",
+      "imageHint": "cloud computing"
+    },
+    {
+      "id": "event-3",
+      "description": "Image for Android Dev Challenge",
+      "imageUrl": "https://picsum.photos/seed/event3/600/400",
+      "imageHint": "coding challenge"
+    },
+    {
+      "id": "event-4",
+      "description": "Image for Fireside chat with a Googler",
+      "imageUrl": "https://picsum.photos/seed/event4/600/400",
+      "imageHint": "people talking"
+    }
+  ]
 }
