@@ -18,7 +18,7 @@ import { Award, Calendar, Users as UsersIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { collection, getDocs, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { AddPointsDialog } from "@/components/add-points-dialog";
+import { ManagePointsDialog } from "@/components/manage-points-dialog";
 
 export default function AdminDashboardPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -85,7 +85,7 @@ export default function AdminDashboardPage() {
                 <TableHead>House</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead className="text-right">Points</TableHead>
-                <TableHead className="w-[120px]"></TableHead>
+                <TableHead className="w-[240px] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -117,8 +117,13 @@ export default function AdminDashboardPage() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right font-medium">{user.points}</TableCell>
-                      <TableCell className="text-right">
-                        {user.role === 'user' && <AddPointsDialog user={user} />}
+                      <TableCell className="text-right space-x-2">
+                        {user.role === 'user' && (
+                          <>
+                            <ManagePointsDialog user={user} mode="add" />
+                            <ManagePointsDialog user={user} mode="deduct" />
+                          </>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
