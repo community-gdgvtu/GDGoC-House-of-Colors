@@ -10,11 +10,11 @@ import {
   ChartConfig,
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { getHouseById, users, houses as staticHouses, House } from "@/lib/data";
-import { Award, Shield, User as UserIcon, MessageSquareQuote } from "lucide-react";
+import { getHouseById, users as staticUsers, House } from "@/lib/data";
+import { Award, Shield, MessageSquareQuote } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { collection, getDocs, onSnapshot, query, orderBy, limit } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface PointHistory {
@@ -27,7 +27,7 @@ interface PointHistory {
 export default function DashboardPage() {
   const { user } = useAuth();
   const [houses, setHouses] = useState<House[]>(staticHouses);
-  const [allUsers, setAllUsers] = useState<any[]>(users);
+  const [allUsers, setAllUsers] = useState<any[]>(staticUsers);
   const [latestRemark, setLatestRemark] = useState<string>("");
 
   const house = user && user.houseId ? getHouseById(user.houseId) : undefined;
@@ -48,8 +48,10 @@ export default function DashboardPage() {
         }
       });
       return () => unsubscribe();
+    } else {
+        setLatestRemark("No points awarded yet.");
     }
-  }, [user?.id]);
+  }, [user]);
 
 
   useEffect(() => {
@@ -57,22 +59,27 @@ export default function DashboardPage() {
         const housesQuery = query(collection(db, "houses"));
         const usersQuery = query(collection(db, "users"));
         
-        onSnapshot(housesQuery, (snapshot) => {
+        const unsubHouses = onSnapshot(housesQuery, (snapshot) => {
             const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as House[];
             setHouses(housesData);
         });
 
-        onSnapshot(usersQuery, (snapshot) => {
+        const unsubUsers = onSnapshot(usersQuery, (snapshot) => {
             const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setAllUsers(usersData);
         });
+
+        return () => {
+            unsubHouses();
+            unsubUsers();
+        }
     }
     fetchHousesAndUsers();
   }, []);
 
   const housePoints = houses.map(h => {
     const houseUsers = allUsers.filter(u => u.houseId === h.id);
-    const totalPoints = houseUsers.reduce((acc, u) => acc + u.points, 0);
+    const totalPoints = houseUsers.reduce((acc, u) => acc + (u.points || 0), 0);
     return {
       house: h.name,
       points: totalPoints,
@@ -80,11 +87,11 @@ export default function DashboardPage() {
     };
   });
   
-  const chartConfig = {
+  const chartConfig: ChartConfig = {
     points: {
       label: "Points",
     },
-  } as ChartConfig;
+  };
   
   housePoints.forEach(item => {
     chartConfig[item.house] = {
