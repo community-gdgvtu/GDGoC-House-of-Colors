@@ -16,7 +16,7 @@ import {
 import { events, type User } from "@/lib/data";
 import { Award, Calendar, Users as UsersIcon } from "lucide-react";
 import { useEffect, useState } from "react";
-import { collection, onSnapshot, query } from "firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { ManagePointsDialog } from "@/components/manage-points-dialog";
 import { HouseSelector } from "@/components/house-selector";

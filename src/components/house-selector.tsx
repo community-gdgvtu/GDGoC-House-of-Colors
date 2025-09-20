@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
 import {
   Select,
   SelectContent,
@@ -9,10 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { db } from '@/lib/firebase';
-import { collection, runTransaction, doc, onSnapshot, increment } from 'firebase/firestore';
-import type { House, User } from '@/lib/data';
-import { useToast } from '@/hooks/use-toast';
+import { type User, type House } from "@/lib/data";
+import { db } from "@/lib/firebase";
+import { doc, updateDoc, collection, onSnapshot, increment, runTransaction } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 
 interface HouseSelectorProps {
   user: User;
@@ -20,90 +20,87 @@ interface HouseSelectorProps {
 
 export function HouseSelector({ user }: HouseSelectorProps) {
   const [houses, setHouses] = useState<House[]>([]);
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedHouse, setSelectedHouse] = useState(user.houseId || "");
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'houses'), (snapshot) => {
-        const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as House));
-        setHouses(housesData);
+    const unsub = onSnapshot(collection(db, "houses"), (snapshot) => {
+      const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as House[];
+      setHouses(housesData);
     });
-
     return () => unsub();
   }, []);
 
-  const handleHouseChange = async (selectedValue: string) => {
-    const newHouseId = selectedValue === "unassigned" ? "" : selectedValue;
-    const oldHouseId = user.houseId;
+  const handleHouseChange = async (newHouseId: string) => {
+    if (newHouseId === selectedHouse) return;
 
-    if (newHouseId === oldHouseId) return;
+    setIsLoading(true);
+    const oldHouseId = selectedHouse;
 
-    setIsUpdating(true);
-    
     try {
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "users", user.id);
-            const oldHouseRef = oldHouseId ? doc(db, "houses", oldHouseId) : null;
-            const newHouseRef = newHouseId ? doc(db, "houses", newHouseId) : null;
 
-            // 1. Perform all reads first.
-            const userDoc = await transaction.get(userRef);
-            const oldHouseDoc = oldHouseRef ? await transaction.get(oldHouseRef) : null;
-            const newHouseDoc = newHouseRef ? await transaction.get(newHouseRef) : null;
-
-            if (!userDoc.exists()) {
-                throw new Error("User document not found.");
-            }
-            const userPoints = userDoc.data().points || 0;
-
-            // 2. Perform all writes.
+            // 1. Update the user's house
             transaction.update(userRef, { houseId: newHouseId });
 
-            if (oldHouseRef && oldHouseDoc?.exists()) {
-                transaction.update(oldHouseRef, { points: increment(-userPoints) });
+            // 2. Decrement points from the old house, if it exists
+            if (oldHouseId) {
+                const oldHouseRef = doc(db, "houses", oldHouseId);
+                const oldHouseDoc = await transaction.get(oldHouseRef);
+                if (oldHouseDoc.exists()) {
+                    transaction.update(oldHouseRef, { points: increment(-user.points) });
+                }
             }
 
-            if (newHouseRef && newHouseDoc?.exists()) {
-                transaction.update(newHouseRef, { points: increment(userPoints) });
+            // 3. Increment points in the new house, if it exists
+            if (newHouseId) {
+                const newHouseRef = doc(db, "houses", newHouseId);
+                 const newHouseDoc = await transaction.get(newHouseRef);
+                if (newHouseDoc.exists()) {
+                    transaction.update(newHouseRef, { points: increment(user.points) });
+                }
             }
         });
 
-      toast({
-        title: "House Updated",
-        description: `${user.name} has been assigned to a new house.`,
-      });
+        setSelectedHouse(newHouseId);
+        toast({
+            title: "House Updated",
+            description: `${user.name} has been moved to a new house.`,
+        });
+
     } catch (error: any) {
-      console.error("Error updating house:", error);
-      toast({
-        title: "Update Failed",
-        description: `Could not update the user's house. ${error.message}`,
-        variant: "destructive",
-      });
+        console.error("Error updating house:", error);
+        toast({
+            title: "Update Failed",
+            description: `Could not change house. ${error.message}`,
+            variant: "destructive",
+        });
     } finally {
-      setIsUpdating(false);
+        setIsLoading(false);
     }
   };
-  
-  const selectValue = user.houseId || "unassigned";
 
   return (
     <Select
-      value={selectValue}
+      value={selectedHouse}
       onValueChange={handleHouseChange}
-      disabled={isUpdating || houses.length === 0}
+      disabled={isLoading}
     >
       <SelectTrigger className="w-[150px]">
-        <SelectValue placeholder={houses.length > 0 ? "Select a house" : "Loading..."} />
+        <SelectValue placeholder="Assign house" />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="unassigned">
-          Unassigned
-        </SelectItem>
-        {houses.map((house) => (
-          <SelectItem key={house.id} value={house.id}>
-            {house.name}
-          </SelectItem>
-        ))}
+        {houses.length > 0 ? (
+          houses.map((house) => (
+            <SelectItem key={house.id} value={house.id}>
+              {house.name}
+            </SelectItem>
+          ))
+        ) : (
+          <SelectItem value="loading" disabled>Loading houses...</SelectItem>
+        )}
       </SelectContent>
     </Select>
   );
