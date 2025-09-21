@@ -11,7 +11,7 @@ async function getHouseAndMembers(houseId: string): Promise<{house: House | null
     // Fetch house and members in parallel
     const [docSnap, usersSnap] = await Promise.all([
         docRef.get(),
-        usersRef.where("houseId", "==", houseId).orderBy("points", "desc").get()
+        usersRef.where("houseId", "==", houseId).get()
     ]);
 
     let house: House | null = null;
@@ -20,6 +20,9 @@ async function getHouseAndMembers(houseId: string): Promise<{house: House | null
     }
 
     const members = usersSnap.docs.map(doc => doc.data() as User);
+
+    // Sort the members by points in descending order in the code
+    members.sort((a, b) => b.points - a.points);
 
     return { house, members };
 }
