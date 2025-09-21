@@ -14,36 +14,10 @@ import {
 } from "@/components/ui/table";
 import { type User, type House } from "@/lib/data";
 import { Trophy } from "lucide-react";
-import { useEffect, useState } from "react";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { useState } from "react";
 
 export function HousePageClient({ house, initialMembers }: { house: House, initialMembers: User[] }) {
-  const [members, setMembers] = useState<User[]>(initialMembers);
-
-  useEffect(() => {
-    if (!house.id) return;
-    
-    const usersQuery = query(
-      collection(db, "users"),
-      where("houseId", "==", house.id),
-      orderBy("points", "desc")
-    );
-
-    const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
-      // Prevents overwriting server-rendered list with empty/cached data on initial load
-      if (snapshot.metadata.fromCache && snapshot.docs.length === 0) {
-        return;
-      }
-      const usersData = snapshot.docs.map(doc => doc.data() as User);
-      setMembers(usersData);
-    }, (error) => {
-      console.error("Error fetching real-time house members: ", error);
-    });
-
-    return () => unsubscribe();
-  }, [house.id]);
-
+  const [members] = useState<User[]>(initialMembers);
 
   return (
     <div className="space-y-6">
