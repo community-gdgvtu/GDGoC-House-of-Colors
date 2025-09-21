@@ -128,3 +128,4 @@ export function HousePageClient({ house }: { house: House }) {
     </div>
   );
 }
+
