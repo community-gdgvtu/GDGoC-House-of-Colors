@@ -1,47 +1,26 @@
 
-"use client";
-
 import { PageHeader } from "@/components/page-header";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { events, type User } from "@/lib/data";
 import { Award, Calendar, Users as UsersIcon } from "lucide-react";
-import { useEffect, useState } from "react";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { ManagePointsDialog } from "@/components/manage-points-dialog";
-import { HouseSelector } from "@/components/house-selector";
-import { BulkAddUsersDialog } from "@/components/bulk-add-users-dialog";
+import { adminDb } from "@/lib/firebase-admin";
+import { AdminUsersClient } from "@/components/admin-users-client";
 
-export default function AdminDashboardPage() {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+async function getUsers() {
+  try {
+    const usersSnapshot = await adminDb.collection("users").get();
+    const users = usersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
+    return users;
+  } catch (error) {
+    console.error("Error fetching users with Admin SDK:", error);
+    // In case of an error on the server, return an empty array.
+    // The client component will show a message.
+    return [];
+  }
+}
 
-  useEffect(() => {
-    // This query now includes a `where` clause to satisfy security rules.
-    // By querying for roles that are either 'user' or 'admin', we effectively get all users
-    // while still providing a constraint that can be validated by Firestore rules.
-    const q = query(collection(db, "users"), where("role", "in", ["user", "admin"]));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const usersData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
-      setUsers(usersData);
-      setLoading(false);
-    }, (error) => {
-        console.error("Error fetching users:", error);
-        setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
+export default async function AdminDashboardPage() {
+  const users = await getUsers();
+  
   const totalUsers = users.filter(u => u.role === 'user').length;
   const totalPoints = users.reduce((acc, user) => acc + (user.points > 0 ? user.points : 0), 0);
   const totalEvents = events.length;
@@ -81,70 +60,12 @@ export default function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
-      <Card>
-        <CardHeader className="flex justify-between items-center">
-          <CardTitle>All Users</CardTitle>
-          <BulkAddUsersDialog />
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>House</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead className="text-right">Points</TableHead>
-                <TableHead className="w-[240px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center">Loading...</TableCell>
-                </TableRow>
-              ) : (
-                users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarImage src={user.avatar} alt={user.name} />
-                          <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <div className="font-medium">{user.name}</div>
-                            <div className="text-xs text-muted-foreground">{user.email}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {user.role === 'admin' ? (
-                        <span>-</span>
-                      ) : (
-                        <HouseSelector user={user} />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right font-medium">{user.points}</TableCell>
-                    <TableCell className="text-right space-x-2">
-                      {user.role === 'user' && (
-                        <>
-                          <ManagePointsDialog user={user} mode="add" />
-                          <ManagePointsDialog user={user} mode="deduct" />
-                        </>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      
+      <AdminUsersClient initialUsers={users} />
     </>
   );
 }
+
+// We need to re-import these components because the page is now a server component
+// and they were not being explicitly imported before.
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
