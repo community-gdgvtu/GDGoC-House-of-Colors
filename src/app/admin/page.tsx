@@ -27,7 +27,10 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, "users"));
+    // This query now includes a `where` clause to satisfy security rules.
+    // By querying for roles that are either 'user' or 'admin', we effectively get all users
+    // while still providing a constraint that can be validated by Firestore rules.
+    const q = query(collection(db, "users"), where("role", "in", ["user", "admin"]));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const usersData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
       setUsers(usersData);
