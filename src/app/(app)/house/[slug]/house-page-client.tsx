@@ -12,7 +12,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { type User, type House } from "@/lib/data";
 import { Trophy, Award } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -92,39 +91,35 @@ export function HousePageClient({ house: initialHouse, initialMembers }: { house
                 <TableHead className="text-right">Points</TableHead>
               </TableRow>
             </TableHeader>
-          </Table>
-          <ScrollArea className="h-[600px]">
-            <Table>
-                <TableBody>
-                {members.length === 0 ? (
-                    <TableRow>
-                    <TableCell colSpan={3} className="text-center h-24">No members in this house yet.</TableCell>
-                    </TableRow>
-                ) : (
-                    members.map((member, index) => (
-                    <TableRow key={member.id} className={index === 0 ? 'bg-amber-400/10 hover:bg-amber-400/20' : ''}>
-                        <TableCell className="font-medium text-lg text-center w-[80px]">
-                            {index === 0 ? <Trophy className="w-5 h-5 text-amber-400 inline-block" /> : (index + 1)}
-                        </TableCell>
-                        <TableCell>
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                            <AvatarImage src={member.avatar} alt={member.name} />
-                            <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <div className="font-medium">{member.name}</div>
-                                <div className="text-xs text-muted-foreground">{member.customId}</div>
-                            </div>
+            <TableBody>
+            {members.length === 0 ? (
+                <TableRow>
+                <TableCell colSpan={3} className="text-center h-24">No members in this house yet.</TableCell>
+                </TableRow>
+            ) : (
+                members.map((member, index) => (
+                <TableRow key={member.id} className={index === 0 ? 'bg-amber-400/10 hover:bg-amber-400/20' : ''}>
+                    <TableCell className="font-medium text-lg text-center w-[80px]">
+                        {index === 0 ? <Trophy className="w-5 h-5 text-amber-400 inline-block" /> : (index + 1)}
+                    </TableCell>
+                    <TableCell>
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9">
+                        <AvatarImage src={member.avatar} alt={member.name} />
+                        <AvatarFallback>{member.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <div className="font-medium">{member.name}</div>
+                            <div className="text-xs text-muted-foreground">{member.customId}</div>
                         </div>
-                        </TableCell>
-                        <TableCell className="text-right font-bold text-lg tabular-nums">{member.points}</TableCell>
-                    </TableRow>
-                    ))
-                )}
-                </TableBody>
-            </Table>
-          </ScrollArea>
+                    </div>
+                    </TableCell>
+                    <TableCell className="text-right font-bold text-lg tabular-nums">{member.points}</TableCell>
+                </TableRow>
+                ))
+            )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
