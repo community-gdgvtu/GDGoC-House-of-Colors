@@ -8,6 +8,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HousePerformanceChart } from "@/components/house-performance-chart";
 import { TopPerformersList } from "@/components/top-performers-list";
 
+// This forces the page to be dynamically rendered and not cached.
+export const revalidate = 0;
+
 async function getDashboardData() {
   try {
     const usersSnapshot = await adminDb.collection("users").orderBy("points", "desc").get();
