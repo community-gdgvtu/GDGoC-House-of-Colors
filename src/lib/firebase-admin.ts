@@ -11,7 +11,6 @@ if (!admin.apps.length) {
       credential: admin.credential.applicationDefault(),
       // The databaseURL is not strictly necessary for Firestore but is good practice.
       databaseURL: 'https://gdgoc-vtu.firebaseio.com',
-      projectId: 'gdgoc-vtu',
     });
   } catch (error) {
     console.error('Firebase admin initialization error', error);
@@ -20,3 +19,4 @@ if (!admin.apps.length) {
 
 // Export the initialized admin instance, specifically the firestore service.
 export const adminDb = admin.firestore();
+export const adminAuth = admin.auth();
