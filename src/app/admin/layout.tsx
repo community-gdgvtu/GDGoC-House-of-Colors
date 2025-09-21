@@ -9,6 +9,7 @@ import {
   Menu,
   Search,
   Settings,
+  User,
   Users,
 } from "lucide-react";
 import Link from "next/link";
@@ -36,6 +37,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { href: "/admin", icon: Home, label: "Overview" },
     { href: "#", icon: Users, label: "Users" },
     { href: "#", icon: Calendar, label: "Events" },
+    { href: "/admin/profile", icon: User, label: "Profile"},
     { href: "#", icon: Settings, label: "Settings" },
   ];
 

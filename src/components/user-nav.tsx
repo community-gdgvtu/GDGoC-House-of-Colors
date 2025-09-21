@@ -39,6 +39,8 @@ export function UserNav() {
     )
   }
 
+  const profileUrl = user.role === 'admin' ? '/admin/profile' : '/profile';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -60,7 +62,7 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <Link href="/profile">
+          <Link href={profileUrl}>
             <DropdownMenuItem>
               Profile
             </DropdownMenuItem>
