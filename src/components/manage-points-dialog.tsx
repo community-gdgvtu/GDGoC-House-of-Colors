@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { type User } from "@/lib/data";
 import { db } from "@/lib/firebase";
-import { doc, collection, serverTimestamp, increment, runTransaction } from "firebase/firestore";
+import { doc, collection, serverTimestamp, increment, runTransaction, DocumentReference } from "firebase/firestore";
 import { PlusCircle, MinusCircle } from "lucide-react";
 
 interface ManagePointsDialogProps {
@@ -60,28 +60,31 @@ export function ManagePointsDialog({ user, mode }: ManagePointsDialogProps) {
             const userRef = doc(db, "users", user.id);
             const houseRef = user.houseId ? doc(db, "houses", user.houseId) : null;
 
-            // 1. Perform all reads first
+            // 1. Perform all reads first.
             const userDoc = await transaction.get(userRef);
-            const houseDoc = houseRef ? await transaction.get(houseRef) : null;
-            
             if (!userDoc.exists()) {
                 throw new Error("User does not exist!");
             }
             
+            const houseDoc = houseRef ? await transaction.get(houseRef) : null;
+            
+            // 2. Prepare data and logic after reads are complete.
             const currentPoints = userDoc.data().points || 0;
             let pointsToLog = isAddMode ? points : -points;
             
+            // Prevent user points from going below zero.
             if (!isAddMode && currentPoints < points) {
                 pointsToLog = -currentPoints;
             }
+            
+            const pointHistoryRef = doc(collection(db, "users", user.id, "point_history"));
 
-            // 2. Perform all writes
+            // 3. Perform all writes.
             transaction.update(userRef, {
                 points: increment(pointsToLog)
             });
 
-            const pointHistoryRef = collection(db, "users", user.id, "point_history");
-            transaction.set(doc(pointHistoryRef), {
+            transaction.set(pointHistoryRef, {
                 pointsAdded: pointsToLog,
                 remark: remark,
                 timestamp: serverTimestamp(),

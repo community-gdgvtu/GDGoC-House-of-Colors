@@ -41,26 +41,25 @@ export function HouseSelector({ user }: HouseSelectorProps) {
     try {
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "users", user.id);
+            const newHouseRef = newHouseId ? doc(db, "houses", newHouseId) : null;
+            const oldHouseRef = oldHouseId ? doc(db, "houses", oldHouseId) : null;
 
-            // 1. Update the user's house
+            // 1. Perform all reads first.
+            const userDoc = await transaction.get(userRef);
+            if (!userDoc.exists()) {
+                throw new Error("User does not exist!");
+            }
+            const userPoints = userDoc.data().points || 0;
+
+            // 2. Perform all writes.
             transaction.update(userRef, { houseId: newHouseId });
 
-            // 2. Decrement points from the old house, if it exists
-            if (oldHouseId) {
-                const oldHouseRef = doc(db, "houses", oldHouseId);
-                const oldHouseDoc = await transaction.get(oldHouseRef);
-                if (oldHouseDoc.exists()) {
-                    transaction.update(oldHouseRef, { points: increment(-user.points) });
-                }
+            if (oldHouseRef) {
+                transaction.update(oldHouseRef, { points: increment(-userPoints) });
             }
 
-            // 3. Increment points in the new house, if it exists
-            if (newHouseId) {
-                const newHouseRef = doc(db, "houses", newHouseId);
-                 const newHouseDoc = await transaction.get(newHouseRef);
-                if (newHouseDoc.exists()) {
-                    transaction.update(newHouseRef, { points: increment(user.points) });
-                }
+            if (newHouseRef) {
+                transaction.update(newHouseRef, { points: increment(userPoints) });
             }
         });
 
@@ -101,6 +100,7 @@ export function HouseSelector({ user }: HouseSelectorProps) {
         ) : (
           <SelectItem value="loading" disabled>Loading houses...</SelectItem>
         )}
+         <SelectItem value="">Unassign</SelectItem>
       </SelectContent>
     </Select>
   );
