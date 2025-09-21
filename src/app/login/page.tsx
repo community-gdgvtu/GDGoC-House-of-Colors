@@ -31,7 +31,6 @@ export default function LoginPage() {
   const handleSignIn = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // Redirect after successful login is handled by the AuthProvider
     } catch (error: any) {
       console.error("Error during sign-in:", error);
       toast({
@@ -45,7 +44,6 @@ export default function LoginPage() {
   const handleSignUp = async () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      // Redirect after successful sign-up is handled by the AuthProvider
     } catch (error: any) {
       console.error("Error during sign-up:", error);
        toast({
@@ -102,7 +100,7 @@ export default function LoginPage() {
         </div>
         <Card>
             <CardHeader>
-                <CardTitle>Login</CardTitle>
+                <CardTitle>Welcome</CardTitle>
                 <CardDescription>Enter your credentials to access your account.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -113,13 +111,13 @@ export default function LoginPage() {
                 <div className="space-y-2">
                     <div className="flex items-center">
                       <Label htmlFor="password">Password</Label>
-                      <button onClick={handlePasswordReset} className="ml-auto inline-block text-sm underline">
+                      <button onClick={handlePasswordReset} className="ml-auto inline-block text-sm text-muted-foreground hover:text-primary underline-offset-4 hover:underline">
                         Forgot your password?
                       </button>
                     </div>
                     <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button onClick={handleSignIn} className="w-full">
                       <LogIn className="mr-2 h-4 w-4" /> Sign In
                   </Button>

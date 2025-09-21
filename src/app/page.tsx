@@ -1,29 +1,54 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { BarChart, Calendar, Shield, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Logo } from '@/components/icons';
 
 export default function Home() {
   const heroImage = PlaceHolderImages.find(p => p.id === "hero-1");
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-[100dvh] bg-background">
+       <header className="px-4 lg:px-6 h-14 flex items-center">
+        <Link href="#" className="flex items-center justify-center" prefetch={false}>
+          <Logo className="h-6 w-6" />
+          <span className="sr-only">GDGoC VTU Portal</span>
+        </Link>
+        <nav className="ml-auto flex gap-4 sm:gap-6">
+          <Link href="/login" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
+            Login
+          </Link>
+          <Link href="/events" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
+            Events
+          </Link>
+        </nav>
+      </header>
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
-          <div className="container px-4 md:px-6">
-            <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 relative">
+          <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent z-10" />
+           {heroImage && (
+             <Image
+                src={heroImage.imageUrl}
+                fill
+                alt="GDG Event"
+                data-ai-hint={heroImage.imageHint}
+                className="object-cover"
+                priority
+              />
+           )}
+          <div className="container px-4 md:px-6 grid place-items-center text-center relative z-20">
+            <div className="grid gap-6 lg:gap-12">
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
-                  <h1 className="text-3xl font-bold tracking-tighter sm:text-5xl xl:text-6xl/none font-headline">
+                  <h1 className="text-4xl font-bold tracking-tighter sm:text-6xl xl:text-7xl/none font-headline bg-clip-text text-transparent bg-gradient-to-r from-primary to-purple-400">
                     Welcome to the GDGoC VTU Portal
                   </h1>
-                  <p className="max-w-[600px] text-muted-foreground md:text-xl">
+                  <p className="max-w-[600px] text-muted-foreground md:text-xl mx-auto">
                     Your central hub for all events, house points, and community updates for GDGoC VTU 2025-26.
                   </p>
                 </div>
-                <div className="flex flex-col gap-2 min-[400px]:flex-row">
+                <div className="flex flex-col gap-2 min-[400px]:flex-row justify-center">
                   <Button asChild size="lg">
                     <Link href="/login">Get Started</Link>
                   </Button>
@@ -32,21 +57,11 @@ export default function Home() {
                   </Button>
                 </div>
               </div>
-               {heroImage && (
-                <Image
-                  src={heroImage.imageUrl}
-                  width={600}
-                  height={400}
-                  alt="GDG Event"
-                  data-ai-hint={heroImage.imageHint}
-                  className="mx-auto aspect-video overflow-hidden rounded-xl object-cover sm:w-full lg:order-last"
-                />
-              )}
             </div>
           </div>
         </section>
         
-        <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-card">
+        <section id="features" className="w-full py-12 md:py-24 lg:py-32 bg-background">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <div className="space-y-2">
@@ -57,33 +72,33 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3 lg:max-w-none mt-12">
-              <div className="grid gap-1 text-center">
-                <div className="flex justify-center items-center">
+            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-4 lg:max-w-none mt-12">
+              <div className="grid gap-2 text-center p-6 rounded-lg hover:bg-card transition-colors">
+                <div className="flex justify-center items-center mb-2">
                   <Calendar className="h-10 w-10 text-primary"/>
                 </div>
-                <h3 className="text-lg font-bold">Event Listings</h3>
+                <h3 className="text-xl font-bold">Event Listings</h3>
                 <p className="text-sm text-muted-foreground">Browse and get details on all upcoming workshops, talks, and competitions.</p>
               </div>
-              <div className="grid gap-1 text-center">
-                <div className="flex justify-center items-center">
+              <div className="grid gap-2 text-center p-6 rounded-lg hover:bg-card transition-colors">
+                <div className="flex justify-center items-center mb-2">
                   <BarChart className="h-10 w-10 text-primary"/>
                 </div>
-                <h3 className="text-lg font-bold">Points Dashboard</h3>
+                <h3 className="text-xl font-bold">Points Dashboard</h3>
                 <p className="text-sm text-muted-foreground">Check your points, see your house's standing, and track your contributions.</p>
               </div>
-              <div className="grid gap-1 text-center">
-                <div className="flex justify-center items-center">
+              <div className="grid gap-2 text-center p-6 rounded-lg hover:bg-card transition-colors">
+                <div className="flex justify-center items-center mb-2">
                   <Users className="h-10 w-10 text-primary"/>
                 </div>
-                <h3 className="text-lg font-bold">House Pages</h3>
+                <h3 className="text-xl font-bold">House Pages</h3>
                 <p className="text-sm text-muted-foreground">Connect with your house, see member rankings, and build team spirit.</p>
               </div>
-              <div className="grid gap-1 text-center lg:col-start-2">
-                 <div className="flex justify-center items-center">
+               <div className="grid gap-2 text-center p-6 rounded-lg hover:bg-card transition-colors">
+                 <div className="flex justify-center items-center mb-2">
                   <Shield className="h-10 w-10 text-primary"/>
                 </div>
-                <h3 className="text-lg font-bold">Role-Based Access</h3>
+                <h3 className="text-xl font-bold">Role-Based Access</h3>
                 <p className="text-sm text-muted-foreground">Separate dashboards and controls for users and admins for a tailored experience.</p>
               </div>
             </div>
