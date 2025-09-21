@@ -16,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Users as UsersIcon } from "lucide-react";
-import { bulkCreateUsers, type BulkCreateUsersOutput } from "@/ai/flows/create-users-flow";
+import { bulkCreateUsers } from "@/ai/flows/create-users-flow";
+import type { BulkCreateUsersOutput } from "@/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { CheckCircle, AlertCircle } from "lucide-react";
 
@@ -133,4 +134,3 @@ user3@example.com"
     </Dialog>
   );
 }
-

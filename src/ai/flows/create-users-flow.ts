@@ -4,23 +4,17 @@
  * @fileOverview A flow for bulk-creating users in Firebase.
  *
  * - bulkCreateUsers - A function that handles creating multiple users from a list of emails.
- * - BulkCreateUsersInput - The input type for the bulkCreateUsers function.
- * - BulkCreateUsersOutput - The return type for the bulkCreateUsers function.
  */
 
 import { ai } from '@/ai/genkit';
 import { adminAuth, adminDb } from '@/lib/firebase-admin';
-import { z } from 'zod';
+import { 
+  BulkCreateUsersInputSchema, 
+  BulkCreateUsersOutputSchema, 
+  type BulkCreateUsersInput, 
+  type BulkCreateUsersOutput 
+} from '@/lib/types';
 
-export const BulkCreateUsersInputSchema = z.array(z.string().email());
-export type BulkCreateUsersInput = z.infer<typeof BulkCreateUsersInputSchema>;
-
-export const BulkCreateUsersOutputSchema = z.object({
-  successCount: z.number().describe('The number of users successfully created.'),
-  failedCount: z.number().describe('The number of users that failed to be created.'),
-  errors: z.array(z.string()).describe('A list of emails that failed and the reason.'),
-});
-export type BulkCreateUsersOutput = z.infer<typeof BulkCreateUsersOutputSchema>;
 
 export async function bulkCreateUsers(emails: BulkCreateUsersInput): Promise<BulkCreateUsersOutput> {
   return bulkCreateUsersFlow(emails);
