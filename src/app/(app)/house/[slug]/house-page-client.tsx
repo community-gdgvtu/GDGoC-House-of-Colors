@@ -34,7 +34,7 @@ export function HousePageClient({ house }: { house: House }) {
     );
 
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
-      const usersData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
+      const usersData = snapshot.docs.map(doc => doc.data() as User);
       setMembers(usersData);
       setLoading(false);
     }, (error) => {
