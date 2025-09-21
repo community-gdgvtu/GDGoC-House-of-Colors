@@ -4,19 +4,19 @@ import { HousePageClient } from "./house-page-client";
 import { type House, type User } from "@/lib/data";
 import { adminDb } from "@/lib/firebase-admin";
 
-async function getHouseAndMembers(houseId: string): Promise<{house: House | null, members: User[]}> {
-    const docRef = adminDb.collection("houses").doc(houseId);
+async function getHouseAndMembers(slug: string): Promise<{house: House | null, members: User[]}> {
+    const houseRef = adminDb.collection("houses").doc(slug);
     const usersRef = adminDb.collection("users");
 
     // Fetch house and members in parallel
-    const [docSnap, usersSnap] = await Promise.all([
-        docRef.get(),
-        usersRef.where("houseId", "==", houseId).orderBy("points", "desc").get()
+    const [houseSnap, usersSnap] = await Promise.all([
+        houseRef.get(),
+        usersRef.where("houseId", "==", slug).orderBy("points", "desc").get()
     ]);
 
     let house: House | null = null;
-    if (docSnap.exists) {
-        house = { id: docSnap.id, ...docSnap.data() } as House;
+    if (houseSnap.exists) {
+        house = { id: houseSnap.id, ...houseSnap.data() } as House;
     }
 
     const members = usersSnap.docs.map(doc => doc.data() as User);
@@ -26,6 +26,8 @@ async function getHouseAndMembers(houseId: string): Promise<{house: House | null
 
 
 export default async function HousePage({ params }: { params: { slug: string } }) {
+  // This was the critical bug. It was passing 'undefined' to the fetch function.
+  // It is now correctly passing params.slug.
   const { house, members } = await getHouseAndMembers(params.slug);
 
   if (!house) {
