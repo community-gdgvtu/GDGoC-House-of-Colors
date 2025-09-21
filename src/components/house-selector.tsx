@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { type User, type House } from "@/lib/data";
 import { db } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, getDoc, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { changeUserHouse } from "@/ai/flows/change-user-house-flow";
 
@@ -49,14 +49,16 @@ export function HouseSelector({ user, onUpdate }: HouseSelectorProps) {
     const oldHouseId = selectedHouse;
 
     try {
-        const updatedUser = await changeUserHouse({
+        await changeUserHouse({
             userId: user.id,
             newHouseId,
             oldHouseId
         });
 
-        if (onUpdate && updatedUser) {
-            onUpdate([updatedUser]);
+        // After the server-side flow succeeds, fetch the updated user to refresh the client state
+        const updatedUserDoc = await getDoc(doc(db, "users", user.id));
+        if (updatedUserDoc.exists() && onUpdate) {
+            onUpdate([updatedUserDoc.data() as User]);
         }
 
         setSelectedHouse(newHouseId);

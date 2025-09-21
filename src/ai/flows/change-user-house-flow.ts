@@ -4,15 +4,8 @@
 import { adminDb } from "@/lib/firebase-admin";
 import { type User } from "@/lib/data";
 import { FieldValue } from "firebase-admin/firestore";
-import { z } from 'zod';
+import { type ChangeUserHouseInput } from "@/lib/types";
 
-export const ChangeUserHouseInputSchema = z.object({
-  userId: z.string(),
-  newHouseId: z.string(),
-  oldHouseId: z.string(),
-});
-
-export type ChangeUserHouseInput = z.infer<typeof ChangeUserHouseInputSchema>;
 
 export async function changeUserHouse(input: ChangeUserHouseInput): Promise<User> {
     const { userId, newHouseId, oldHouseId } = input;

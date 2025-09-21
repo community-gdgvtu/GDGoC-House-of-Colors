@@ -1,5 +1,6 @@
 
 import { z } from 'zod';
+import { type User } from '@/lib/data';
 
 export const BulkCreateUsersInputSchema = z.object({
     emails: z.string().describe("A newline-separated list of user emails to create."),
@@ -21,7 +22,7 @@ export const BulkManagePointsInputSchema = z.object({
     points: z.number().describe("The number of points to add (positive) or deduct (negative)."),
     remark: z.string().describe("The reason for the point adjustment."),
 });
-export type BulkManagePointsInput = z.infer<typeof BulkManagePointsInputSchema>;
+export type BulkManagePointsInput = zfus.infer<typeof BulkManagePointsInputSchema>;
 
 export const BulkManagePointsOutputSchema = z.object({
     successful: z.array(z.string()).describe("A list of custom IDs that were successfully updated."),
@@ -29,6 +30,14 @@ export const BulkManagePointsOutputSchema = z.object({
         customId: z.string(),
         reason: z.string(),
     })).describe("A list of custom IDs that failed to be updated, along with the reason."),
-    updatedUsers: z.array(z.any()).describe("A list of the full user objects that were updated."),
+    updatedUsers: z.array(z.custom<User>()).describe("A list of the full user objects that were updated."),
 });
 export type BulkManagePointsOutput = z.infer<typeof BulkManagePointsOutputSchema>;
+
+export const ChangeUserHouseInputSchema = z.object({
+  userId: z.string(),
+  newHouseId: z.string(),
+  oldHouseId: z.string(),
+});
+
+export type ChangeUserHouseInput = z.infer<typeof ChangeUserHouseInputSchema>;
