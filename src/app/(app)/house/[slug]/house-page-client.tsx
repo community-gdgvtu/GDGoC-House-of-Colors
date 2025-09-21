@@ -24,8 +24,6 @@ export function HousePageClient({ house, initialMembers }: { house: House, initi
   useEffect(() => {
     if (!house.id) return;
     
-    // Set up a real-time listener for member updates.
-    // This will reflect point changes instantly.
     const usersQuery = query(
       collection(db, "users"),
       where("houseId", "==", house.id),
