@@ -90,7 +90,12 @@ export async function bulkManagePoints(input: BulkManagePointsInput): Promise<Bu
     } catch (error: any) {
         // This is a general catch block. Specific failures are already in the `failed` array.
         console.error("Error during bulk points management:", error);
-        throw new Error(`An unexpected error occurred: ${error.message}`);
+        // Only add a generic failure if there are no specific failures, to avoid double-reporting.
+        if (failed.length === 0 && successful.length === 0) {
+            customIds.forEach(customId => {
+                failed.push({ customId, reason: `An unexpected error occurred: ${error.message}` });
+            });
+        }
     }
 
     return { successful, failed, updatedUsers };

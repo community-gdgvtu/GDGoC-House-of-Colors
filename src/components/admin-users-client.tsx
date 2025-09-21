@@ -200,7 +200,9 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                       {user.role}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right font-medium">{user.points}</TableCell>
+                  <TableCell className="text-right font-medium">
+                     {user.role === 'admin' ? "-" : user.points}
+                  </TableCell>
                   <TableCell className="text-right">
                     {user.role === 'user' && (
                       <div className="flex flex-col sm:flex-row gap-2 justify-end">
