@@ -25,6 +25,7 @@ export function HousePageClient({ house, initialMembers }: { house: House, initi
     if (!house.id) return;
     
     // Set up a real-time listener for member updates.
+    // This will reflect point changes instantly.
     const usersQuery = query(
       collection(db, "users"),
       where("houseId", "==", house.id),
@@ -32,6 +33,10 @@ export function HousePageClient({ house, initialMembers }: { house: House, initi
     );
 
     const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
+      // Prevents overwriting server-rendered list with empty/cached data on initial load
+      if (snapshot.metadata.fromCache && snapshot.docs.length === 0) {
+        return;
+      }
       const usersData = snapshot.docs.map(doc => doc.data() as User);
       setMembers(usersData);
     }, (error) => {
