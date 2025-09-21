@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/select";
 import { type User, type House } from "@/lib/data";
 import { db } from "@/lib/firebase";
-import { doc, collection, onSnapshot, increment, runTransaction, getDoc } from "firebase/firestore";
+import { collection, onSnapshot } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { changeUserHouse } from "@/ai/flows/change-user-house-flow";
 
 interface HouseSelectorProps {
   user: User;
@@ -34,6 +35,11 @@ export function HouseSelector({ user, onUpdate }: HouseSelectorProps) {
     });
     return () => unsub();
   }, []);
+  
+  // Keep component state in sync if the user prop changes from above
+  useEffect(() => {
+    setSelectedHouse(user.houseId || "");
+  }, [user.houseId]);
 
   const handleHouseChange = async (value: string) => {
     const newHouseId = value === UNASSIGN_VALUE ? "" : value;
@@ -43,39 +49,14 @@ export function HouseSelector({ user, onUpdate }: HouseSelectorProps) {
     const oldHouseId = selectedHouse;
 
     try {
-        await runTransaction(db, async (transaction) => {
-            const userRef = doc(db, "users", user.id);
-            const userDoc = await transaction.get(userRef);
-            if (!userDoc.exists()) {
-                throw new Error("User does not exist!");
-            }
-            const userData = userDoc.data() as User;
-            const userPoints = userData.points || 0;
-
-            // Define refs for new and old houses
-            const newHouseRef = newHouseId ? doc(db, "houses", newHouseId) : null;
-            const oldHouseRef = oldHouseId ? doc(db, "houses", oldHouseId) : null;
-            
-            // Perform all reads first
-            const oldHouseDoc = oldHouseRef ? await transaction.get(oldHouseRef) : null;
-
-            // Perform all writes
-            transaction.update(userRef, { houseId: newHouseId });
-
-            // Decrement points from the old house only if it exists
-            if (oldHouseDoc && oldHouseDoc.exists()) {
-                transaction.update(oldHouseRef!, { points: increment(-userPoints) });
-            }
-
-            // Increment points for the new house
-            if (newHouseRef) {
-                transaction.update(newHouseRef, { points: increment(userPoints) });
-            }
+        const updatedUser = await changeUserHouse({
+            userId: user.id,
+            newHouseId,
+            oldHouseId
         });
 
-        const updatedUserDoc = await getDoc(doc(db, "users", user.id));
-        if (updatedUserDoc.exists() && onUpdate) {
-            onUpdate([updatedUserDoc.data() as User]);
+        if (onUpdate && updatedUser) {
+            onUpdate([updatedUser]);
         }
 
         setSelectedHouse(newHouseId);
@@ -91,6 +72,8 @@ export function HouseSelector({ user, onUpdate }: HouseSelectorProps) {
             description: `Could not change house. ${error.message}`,
             variant: "destructive",
         });
+        // Revert UI on failure
+        setSelectedHouse(oldHouseId);
     } finally {
         setIsLoading(false);
     }
