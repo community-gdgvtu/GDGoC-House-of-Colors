@@ -24,7 +24,7 @@ export function HousePageClient({ house }: { house: House }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!house) return;
+    if (!house.id) return;
 
     setLoading(true);
     const usersQuery = query(
@@ -33,7 +33,7 @@ export function HousePageClient({ house }: { house: House }) {
       orderBy("points", "desc")
     );
 
-    const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
+    const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
       const usersData = snapshot.docs.map(doc => doc.data() as User);
       setMembers(usersData);
       setLoading(false);
@@ -42,8 +42,9 @@ export function HousePageClient({ house }: { house: House }) {
       setLoading(false);
     });
 
-    return () => unsubscribeUsers();
-  }, [house]);
+    // Cleanup subscription on component unmount
+    return () => unsubscribe();
+  }, [house.id]);
 
   return (
     <div className="space-y-6">
@@ -128,4 +129,3 @@ export function HousePageClient({ house }: { house: House }) {
     </div>
   );
 }
-
