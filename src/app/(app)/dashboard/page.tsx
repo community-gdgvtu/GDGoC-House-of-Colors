@@ -18,13 +18,14 @@ import {
   ChartConfig,
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts";
-import { type House } from "@/lib/data";
-import { Award, Shield, History, User as UserIcon, TrendingUp } from "lucide-react";
+import { type House, type User } from "@/lib/data";
+import { Award, Shield, History, User as UserIcon, TrendingUp, Trophy } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState, useMemo } from "react";
-import { collection, onSnapshot, query, orderBy, Timestamp } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, Timestamp, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface PointHistory {
   id: string;
@@ -36,9 +37,11 @@ interface PointHistory {
 export default function DashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const [houses, setHouses] = useState<House[]>([]);
+  const [topUsers, setTopUsers] = useState<User[]>([]);
   const [pointHistory, setPointHistory] = useState<PointHistory[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [loadingHouses, setLoadingHouses] = useState(true);
+  const [loadingTopUsers, setLoadingTopUsers] = useState(true);
 
   // Effect for fetching point history
   useEffect(() => {
@@ -68,7 +71,7 @@ export default function DashboardPage() {
     return () => unsubscribe();
   }, [user, authLoading]);
 
-  // Effect for fetching house standings
+  // Effect for fetching house standings and top users
   useEffect(() => {
     setLoadingHouses(true);
     const housesQuery = query(collection(db, "houses"), orderBy("points", "desc"));
@@ -81,16 +84,30 @@ export default function DashboardPage() {
       setLoadingHouses(false);
     });
 
-    return () => unsubHouses();
+    setLoadingTopUsers(true);
+    const usersQuery = query(collection(db, "users"), orderBy("points", "desc"), limit(5));
+     const unsubUsers = onSnapshot(usersQuery, (snapshot) => {
+        const usersData = snapshot.docs.map(doc => doc.data() as User);
+        setTopUsers(usersData);
+        setLoadingTopUsers(false);
+    }, (error) => {
+        console.error("Error fetching top users:", error);
+        setLoadingTopUsers(false);
+    });
+
+    return () => {
+      unsubHouses();
+      unsubUsers();
+    };
   }, []);
   
   const userHouse = useMemo(() => houses.find(h => h.id === user?.houseId), [houses, user]);
   const userRankInHouse = useMemo(() => {
       if (!userHouse) return null;
-      // This is a placeholder as we don't have all member data on the client
-      // A more complex query would be needed for a live rank
       return houses.findIndex(h => h.id === userHouse.id) + 1;
   }, [userHouse, houses]);
+
+  const houseMap = useMemo(() => new Map(houses.map(h => [h.id, h])), [houses]);
 
   const housePoints = useMemo(() => houses.map(h => ({
     house: h.name,
@@ -174,7 +191,52 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-12 lg:col-span-4">
+        <Card className="lg:col-span-2 order-last lg:order-first">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+                <Trophy className="h-5 w-5 text-amber-400" />
+                Top Performers
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+             <Table>
+              <TableBody>
+                {loadingTopUsers ? (
+                  Array.from({length: 5}).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-9 w-9 rounded-full" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-[100px]" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-6 w-[30px] ml-auto" /></TableCell>
+                    </TableRow>
+                  ))
+                ) : topUsers.length > 0 ? (
+                  topUsers.map((item) => (
+                    <TableRow key={item.id}>
+                       <TableCell>
+                        <Avatar className="h-9 w-9">
+                          <AvatarImage src={item.avatar} alt={item.name} />
+                          <AvatarFallback>{item.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                      </TableCell>
+                      <TableCell>
+                         <div className="font-medium">{item.name}</div>
+                         <div className="text-xs text-muted-foreground">{houseMap.get(item.houseId)?.name || 'Unassigned'}</div>
+                      </TableCell>
+                      <TableCell className="text-right font-bold text-lg tabular-nums">{item.points}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground py-10">
+                      No users with points yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+        <Card className="col-span-12 lg:col-span-3">
           <CardHeader>
             <CardTitle>House Standings</CardTitle>
           </CardHeader>
@@ -212,7 +274,7 @@ export default function DashboardPage() {
             }
           </CardContent>
         </Card>
-        <Card className="col-span-12 lg:col-span-3">
+        <Card className="col-span-12 lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
                 <History className="h-5 w-5" />

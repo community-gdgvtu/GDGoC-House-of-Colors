@@ -14,26 +14,26 @@ import {
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { type User, type House } from "@/lib/data";
-import { Trophy } from "lucide-react";
+import { Trophy, Award } from "lucide-react";
 import { useState, useEffect } from "react";
-import { collection, onSnapshot, query, where, orderBy, limit } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, limit, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-export function HousePageClient({ house, initialMembers }: { house: House, initialMembers: User[] }) {
+export function HousePageClient({ house: initialHouse, initialMembers }: { house: House, initialMembers: User[] }) {
   const [members, setMembers] = useState<User[]>(initialMembers);
+  const [house, setHouse] = useState<House>(initialHouse);
 
   useEffect(() => {
     if (!house.id) return;
-    
+
     const membersQuery = query(
-        collection(db, "users"), 
+        collection(db, "users"),
         where("houseId", "==", house.id),
         orderBy("points", "desc"),
         limit(1000)
     );
 
-    const unsubscribe = onSnapshot(membersQuery, (snapshot) => {
-        // This check prevents overwriting server-rendered data with empty cache results on initial load.
+    const membersUnsubscribe = onSnapshot(membersQuery, (snapshot) => {
         if (snapshot.metadata.fromCache && snapshot.docs.length === 0) {
             return;
         }
@@ -43,7 +43,16 @@ export function HousePageClient({ house, initialMembers }: { house: House, initi
         console.error(`Error fetching members for house ${house.name}:`, error);
     });
 
-    return () => unsubscribe();
+    const houseUnsubscribe = onSnapshot(doc(db, "houses", house.id), (docSnap) => {
+        if (docSnap.exists()) {
+            setHouse(docSnap.data() as House);
+        }
+    });
+
+    return () => {
+        membersUnsubscribe();
+        houseUnsubscribe();
+    };
   }, [house.id, house.name]);
 
 
@@ -57,6 +66,10 @@ export function HousePageClient({ house, initialMembers }: { house: House, initi
             description={`Meet the members of the mighty ${house.name}.`}
             className={`mb-0 ${house.textColor}`}
           />
+           <div className={`mt-4 flex items-center gap-2 ${house.textColor}`}>
+              <Award className="h-6 w-6" />
+              <span className="text-2xl font-bold">{house.points} Points</span>
+            </div>
           <div className={`mt-6 grid grid-cols-2 gap-4 ${house.textColor}`}>
             <div>
               <h3 className="font-bold text-lg opacity-80">President</h3>
