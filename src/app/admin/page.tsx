@@ -20,6 +20,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { ManagePointsDialog } from "@/components/manage-points-dialog";
 import { HouseSelector } from "@/components/house-selector";
+import { BulkAddUsersDialog } from "@/components/bulk-add-users-dialog";
 
 export default function AdminDashboardPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -31,6 +32,9 @@ export default function AdminDashboardPage() {
       const usersData = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
       setUsers(usersData);
       setLoading(false);
+    }, (error) => {
+        console.error("Error fetching users:", error);
+        setLoading(false);
     });
     return () => unsubscribe();
   }, []);
@@ -75,8 +79,9 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
       <Card>
-        <CardHeader>
+        <CardHeader className="flex justify-between items-center">
           <CardTitle>All Users</CardTitle>
+          <BulkAddUsersDialog />
         </CardHeader>
         <CardContent>
           <Table>
