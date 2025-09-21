@@ -4,11 +4,10 @@ export type House = {
   id: string;
   name: string;
   color: string;
-  bgColor: string;
   textColor: string;
-  borderColor: string;
   president: string;
   houseCaptain: string;
+  points: number;
 };
 
 export type User = {
@@ -29,24 +28,14 @@ export type Event = {
   image: string;
 };
 
-export const houses: House[] = [
-  { id: 'red', name: 'Red Raptors', color: '#F44336', bgColor: 'bg-red-500', textColor: 'text-white', borderColor: 'border-red-500', president: 'Alice', houseCaptain: 'Bob' },
-  { id: 'yellow', name: 'Yellow Strikers', color: '#FFEB3B', bgColor: 'bg-yellow-400', textColor: 'text-gray-800', borderColor: 'border-yellow-400', president: 'Charlie', houseCaptain: 'Dave' },
-  { id: 'green', name: 'Green Geckos', color: '#4CAF50', bgColor: 'bg-green-500', textColor: 'text-white', borderColor: 'border-green-500', president: 'Eve', houseCaptain: 'Frank' },
-  { id: 'blue', name: 'Blue Blasters', color: '#2196F3', bgColor: 'bg-blue-500', textColor: 'text-white', borderColor: 'border-blue-500', president: 'Grace', houseCaptain: 'Heidi' },
+// This data is for initializing your Firestore database.
+export const initialHousesData: Omit<House, 'id'>[] = [
+  { name: 'Red Raptors', color: '#F44336', textColor: 'text-white', president: 'Alice', houseCaptain: 'Bob', points: 0 },
+  { name: 'Yellow Strikers', color: '#FFEB3B', textColor: 'text-gray-800', president: 'Charlie', houseCaptain: 'Dave', points: 0 },
+  { name: 'Green Geckos', color: '#4CAF50', textColor: 'text-white', president: 'Eve', houseCaptain: 'Frank', points: 0 },
+  { name: 'Blue Blasters', color: '#2196F3', textColor: 'text-white', president: 'Grace', houseCaptain: 'Heidi', points: 0 },
 ];
 
-export const users: User[] = [
-  { id: 'user_1', name: 'Alex Doe', email: 'alex.doe@example.com', points: 150, houseId: 'blue', role: 'user', avatar: 'https://i.pravatar.cc/150?u=user_1' },
-  { id: 'user_2', name: 'Brenda Smith', email: 'brenda.smith@example.com', points: 120, houseId: 'red', role: 'user', avatar: 'https://i.pravatar.cc/150?u=user_2' },
-  { id: 'user_3', name: 'Charlie Brown', email: 'charlie.brown@example.com', points: 200, houseId: 'green', role: 'user', avatar: 'https://i.pravatar.cc/150?u=user_3' },
-  { id: 'user_4', name: 'Diana Prince', email: 'diana.prince@example.com', points: 80, houseId: 'yellow', role: 'user', avatar: 'https://i.pravatar.cc/150?u=user_4' },
-  { id: 'user_5', name: 'Ethan Hunt', email: 'ethan.hunt@example.com', points: 180, houseId: 'blue', role: 'user', avatar: 'https://i.pravatar.cc/150?u=user_5' },
-  { id: 'user_6', name: 'Fiona Glenanne', email: 'fiona.glenanne@example.com', points: 95, houseId: 'red', role: 'user', avatar: 'https://i.pravatar.cc/150?u=user_6' },
-  { id: 'user_7', name: 'George Costanza', email: 'george.costanza@example.com', points: 110, houseId: 'green', role: 'user', avatar: 'https://i.pravatar.cc/150?u=user_7' },
-  { id: 'user_8', name: 'Harry Potter', email: 'harry.potter@example.com', points: 250, houseId: 'yellow', role: 'user', avatar: 'https://i.pravatar.cc/150?u=user_8' },
-  { id: 'user_admin', name: 'Admin Ali', email: 'ali.admin@example.com', points: 0, houseId: '', role: 'admin', avatar: 'https://i.pravatar.cc/150?u=user_admin' },
-];
 
 export const events: Event[] = [
     { 
@@ -78,7 +67,3 @@ export const events: Event[] = [
         image: PlaceHolderImages.find(p => p.id === 'event-4')?.imageUrl || ''
     },
 ];
-
-export const getHouseById = (id: string) => houses.find(h => h.id === id);
-export const getUserById = (id: string) => users.find(u => u.id === id);
-export const getUsersByHouse = (houseId: string) => users.filter(u => u.houseId === houseId && u.role === 'user');
