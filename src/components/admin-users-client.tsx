@@ -22,13 +22,14 @@ import { backfillCustomIds } from "@/ai/flows/backfill-user-ids-flow";
 import { useToast } from "@/hooks/use-toast";
 import { Wand2, Search } from "lucide-react";
 import { Input } from "./ui/input";
+import { BulkManagePointsDialog } from "./bulk-manage-points-dialog";
 
 interface AdminUsersClientProps {
     initialUsers: User[];
 }
 
 export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
-  const [users] = useState<User[]>(initialUsers);
+  const [users, setUsers] = useState<User[]>(initialUsers);
   const [searchQuery, setSearchQuery] = useState("");
   const [backfillLoading, setBackfillLoading] = useState(false);
   const { toast } = useToast();
@@ -57,12 +58,22 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
 
   const filteredUsers = users.filter(user => {
     const query = searchQuery.toLowerCase();
+    const customId = user.customId || "";
     return (
       user.name.toLowerCase().includes(query) ||
       user.email.toLowerCase().includes(query) ||
-      user.customId?.toLowerCase().includes(query)
+      customId.toLowerCase().includes(query)
     );
   });
+
+  const onUsersUpdated = (updatedUsers: User[]) => {
+    // This function can be called from child dialogs to reflect updates without a full refresh.
+    setUsers(currentUsers => {
+      const userMap = new Map(currentUsers.map(u => [u.id, u]));
+      updatedUsers.forEach(u => userMap.set(u.id, u));
+      return Array.from(userMap.values());
+    });
+  }
 
   return (
     <Card>
@@ -80,12 +91,13 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleBackfill} disabled={backfillLoading}>
-                <Wand2 className="mr-2" />
+            <div className="flex gap-2 flex-wrap">
+               <BulkManagePointsDialog onUpdate={onUsersUpdated} />
+               <BulkAddUsersDialog />
+               <Button variant="outline" onClick={handleBackfill} disabled={backfillLoading}>
+                <Wand2 className="mr-2 h-4 w-4" />
                 {backfillLoading ? "Backfilling..." : "Backfill IDs"}
               </Button>
-              <BulkAddUsersDialog />
             </div>
           </div>
         </div>
@@ -128,7 +140,7 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                     {user.role === 'admin' ? (
                       <span>-</span>
                     ) : (
-                      <HouseSelector user={user} />
+                      <HouseSelector user={user} onUpdate={onUsersUpdated} />
                     )}
                   </TableCell>
                   <TableCell>
@@ -140,8 +152,8 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                   <TableCell className="text-right space-x-2">
                     {user.role === 'user' && (
                       <>
-                        <ManagePointsDialog user={user} mode="add" />
-                        <ManagePointsDialog user={user} mode="deduct" />
+                        <ManagePointsDialog user={user} mode="add" onUpdate={onUsersUpdated} />
+                        <ManagePointsDialog user={user} mode="deduct" onUpdate={onUsersUpdated} />
                       </>
                     )}
                   </TableCell>

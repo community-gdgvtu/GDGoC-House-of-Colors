@@ -11,16 +11,17 @@ import {
 } from "@/components/ui/select";
 import { type User, type House } from "@/lib/data";
 import { db } from "@/lib/firebase";
-import { doc, collection, onSnapshot, increment, runTransaction } from "firebase/firestore";
+import { doc, collection, onSnapshot, increment, runTransaction, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 interface HouseSelectorProps {
   user: User;
+  onUpdate?: (updatedUsers: User[]) => void;
 }
 
 const UNASSIGN_VALUE = "unassign";
 
-export function HouseSelector({ user }: HouseSelectorProps) {
+export function HouseSelector({ user, onUpdate }: HouseSelectorProps) {
   const [houses, setHouses] = useState<House[]>([]);
   const [selectedHouse, setSelectedHouse] = useState(user.houseId || "");
   const [isLoading, setIsLoading] = useState(false);
@@ -48,7 +49,8 @@ export function HouseSelector({ user }: HouseSelectorProps) {
             if (!userDoc.exists()) {
                 throw new Error("User does not exist!");
             }
-            const userPoints = userDoc.data().points || 0;
+            const userData = userDoc.data() as User;
+            const userPoints = userData.points || 0;
 
             // Define refs for new and old houses
             const newHouseRef = newHouseId ? doc(db, "houses", newHouseId) : null;
@@ -70,6 +72,11 @@ export function HouseSelector({ user }: HouseSelectorProps) {
                 transaction.update(newHouseRef, { points: increment(userPoints) });
             }
         });
+
+        const updatedUserDoc = await getDoc(doc(db, "users", user.id));
+        if (updatedUserDoc.exists() && onUpdate) {
+            onUpdate([updatedUserDoc.data() as User]);
+        }
 
         setSelectedHouse(newHouseId);
         toast({

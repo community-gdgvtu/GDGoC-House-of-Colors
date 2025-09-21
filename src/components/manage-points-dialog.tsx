@@ -18,15 +18,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { type User } from "@/lib/data";
 import { db } from "@/lib/firebase";
-import { doc, collection, serverTimestamp, increment, runTransaction, DocumentReference } from "firebase/firestore";
+import { doc, collection, serverTimestamp, increment, runTransaction, getDoc } from "firebase/firestore";
 import { PlusCircle, MinusCircle } from "lucide-react";
 
 interface ManagePointsDialogProps {
   user: User;
   mode: 'add' | 'deduct';
+  onUpdate?: (updatedUsers: User[]) => void;
 }
 
-export function ManagePointsDialog({ user, mode }: ManagePointsDialogProps) {
+export function ManagePointsDialog({ user, mode, onUpdate }: ManagePointsDialogProps) {
   const [open, setOpen] = useState(false);
   const [points, setPoints] = useState(0);
   const [remark, setRemark] = useState("");
@@ -96,6 +97,11 @@ export function ManagePointsDialog({ user, mode }: ManagePointsDialogProps) {
                 });
             }
         });
+
+      const updatedUserDoc = await getDoc(doc(db, "users", user.id));
+      if (updatedUserDoc.exists() && onUpdate) {
+        onUpdate([updatedUserDoc.data() as User]);
+      }
 
       toast({
         title: `Points ${isAddMode ? 'Awarded' : 'Deducted'}!`,
