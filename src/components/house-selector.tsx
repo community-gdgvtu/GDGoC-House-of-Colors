@@ -11,12 +11,14 @@ import {
 } from "@/components/ui/select";
 import { type User, type House } from "@/lib/data";
 import { db } from "@/lib/firebase";
-import { doc, updateDoc, collection, onSnapshot, increment, runTransaction } from "firebase/firestore";
+import { doc, collection, onSnapshot, increment, runTransaction } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 
 interface HouseSelectorProps {
   user: User;
 }
+
+const UNASSIGN_VALUE = "unassign";
 
 export function HouseSelector({ user }: HouseSelectorProps) {
   const [houses, setHouses] = useState<House[]>([]);
@@ -32,7 +34,8 @@ export function HouseSelector({ user }: HouseSelectorProps) {
     return () => unsub();
   }, []);
 
-  const handleHouseChange = async (newHouseId: string) => {
+  const handleHouseChange = async (value: string) => {
+    const newHouseId = value === UNASSIGN_VALUE ? "" : value;
     if (newHouseId === selectedHouse) return;
 
     setIsLoading(true);
@@ -41,17 +44,15 @@ export function HouseSelector({ user }: HouseSelectorProps) {
     try {
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "users", user.id);
-            const newHouseRef = newHouseId ? doc(db, "houses", newHouseId) : null;
-            const oldHouseRef = oldHouseId ? doc(db, "houses", oldHouseId) : null;
-
-            // 1. Perform all reads first.
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists()) {
                 throw new Error("User does not exist!");
             }
             const userPoints = userDoc.data().points || 0;
 
-            // 2. Perform all writes.
+            const newHouseRef = newHouseId ? doc(db, "houses", newHouseId) : null;
+            const oldHouseRef = oldHouseId ? doc(db, "houses", oldHouseId) : null;
+            
             transaction.update(userRef, { houseId: newHouseId });
 
             if (oldHouseRef) {
@@ -66,7 +67,7 @@ export function HouseSelector({ user }: HouseSelectorProps) {
         setSelectedHouse(newHouseId);
         toast({
             title: "House Updated",
-            description: `${user.name} has been moved to a new house.`,
+            description: `${user.name} has been ${newHouseId ? 'moved to a new house' : 'unassigned'}.`,
         });
 
     } catch (error: any) {
@@ -83,7 +84,7 @@ export function HouseSelector({ user }: HouseSelectorProps) {
 
   return (
     <Select
-      value={selectedHouse}
+      value={selectedHouse || UNASSIGN_VALUE}
       onValueChange={handleHouseChange}
       disabled={isLoading}
     >
@@ -100,7 +101,7 @@ export function HouseSelector({ user }: HouseSelectorProps) {
         ) : (
           <SelectItem value="loading" disabled>Loading houses...</SelectItem>
         )}
-         <SelectItem value="">Unassign</SelectItem>
+         <SelectItem value={UNASSIGN_VALUE}>Unassign</SelectItem>
       </SelectContent>
     </Select>
   );
