@@ -26,8 +26,6 @@ async function getHouseAndMembers(slug: string): Promise<{house: House | null, m
 
 
 export default async function HousePage({ params }: { params: { slug: string } }) {
-  // This was the critical bug. It was passing 'undefined' to the fetch function.
-  // It is now correctly passing params.slug.
   const { house, members } = await getHouseAndMembers(params.slug);
 
   if (!house) {
