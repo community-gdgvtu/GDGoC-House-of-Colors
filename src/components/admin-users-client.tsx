@@ -91,7 +91,7 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                 <Input
                   type="search"
                   placeholder="Search users..."
-                  className="pl-8 sm:w-[250px] lg:w-[300px]"
+                  className="pl-8 sm:w-auto"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -112,10 +112,10 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
           <TableHeader>
             <TableRow>
               <TableHead>User</TableHead>
-              <TableHead>House</TableHead>
-              <TableHead>Role</TableHead>
+              <TableHead className="hidden md:table-cell">House</TableHead>
+              <TableHead className="hidden sm:table-cell">Role</TableHead>
               <TableHead className="text-right">Points</TableHead>
-              <TableHead className="w-[340px] text-right">Actions</TableHead>
+              <TableHead className="w-auto text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -136,31 +136,31 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                       </Avatar>
                       <div>
                         <div className="font-medium">{user.name}</div>
-                        <div className="text-xs text-muted-foreground">{user.email}</div>
-                        <div className="text-xs text-muted-foreground font-mono">{user.customId}</div>
+                        <div className="text-xs text-muted-foreground block sm:hidden md:block">{user.email}</div>
+                        <div className="text-xs text-muted-foreground font-mono block sm:hidden md:block">{user.customId}</div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden md:table-cell">
                     {user.role === 'admin' ? (
                       <span>-</span>
                     ) : (
                       <HouseSelector user={user} onUpdate={onUsersUpdated} />
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="hidden sm:table-cell">
                     <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
                       {user.role}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right font-medium">{user.points}</TableCell>
-                  <TableCell className="text-right space-x-2">
+                  <TableCell className="text-right">
                     {user.role === 'user' && (
-                      <>
+                      <div className="flex flex-col sm:flex-row gap-2 justify-end">
                         <ManagePointsDialog user={user} mode="add" onUpdate={onUsersUpdated} />
                         <ManagePointsDialog user={user} mode="deduct" onUpdate={onUsersUpdated} />
                         <DeleteUserDialog user={user} onUserDeleted={onUserDeleted} />
-                      </>
+                      </div>
                     )}
                   </TableCell>
                 </TableRow>

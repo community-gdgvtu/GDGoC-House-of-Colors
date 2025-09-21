@@ -139,7 +139,7 @@ export default function DashboardPage() {
         title={`Welcome, ${user.name}!`}
         description="Here's your personal overview of the GDGoC."
       />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Your Points</CardTitle>
@@ -286,7 +286,7 @@ export default function DashboardPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Reason</TableHead>
-                  <TableHead>Date</TableHead>
+                  <TableHead className="hidden sm:table-cell">Date</TableHead>
                   <TableHead className="text-right">Points</TableHead>
                 </TableRow>
               </TableHeader>
@@ -295,7 +295,7 @@ export default function DashboardPage() {
                   Array.from({length: 5}).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell><Skeleton className="h-4 w-[120px]" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-[70px]" /></TableCell>
+                      <TableCell className="hidden sm:table-cell"><Skeleton className="h-4 w-[70px]" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-[30px] ml-auto" /></TableCell>
                     </TableRow>
                   ))
@@ -303,7 +303,7 @@ export default function DashboardPage() {
                   pointHistory.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell className="font-medium truncate max-w-[150px]" title={item.remark}>{item.remark}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
+                      <TableCell className="text-xs text-muted-foreground hidden sm:table-cell">
                         {item.timestamp?.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </TableCell>
                       <TableCell className={`text-right font-bold tabular-nums ${item.pointsAdded >= 0 ? 'text-green-500' : 'text-red-500'}`}>

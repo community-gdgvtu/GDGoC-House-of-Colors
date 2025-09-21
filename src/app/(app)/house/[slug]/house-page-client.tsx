@@ -57,7 +57,7 @@ export function HousePageClient({ house: initialHouse, initialMembers }: { house
 
   return (
     <div className="space-y-6">
-      <div className={`p-8 rounded-lg relative overflow-hidden`} style={{ backgroundColor: house.color }}>
+      <div className={`p-6 md:p-8 rounded-lg relative overflow-hidden`} style={{ backgroundColor: house.color }}>
          <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
         <div className="relative">
           <PageHeader
@@ -69,7 +69,7 @@ export function HousePageClient({ house: initialHouse, initialMembers }: { house
               <Award className="h-6 w-6" />
               <span className="text-2xl font-bold">{house.points} Points</span>
             </div>
-          <div className={`mt-6 grid grid-cols-2 gap-4 ${house.textColor}`}>
+          <div className={`mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 ${house.textColor}`}>
             <div>
               <h3 className="font-bold text-lg opacity-80">President</h3>
               <p className="font-semibold text-xl">{house.president}</p>
@@ -86,7 +86,7 @@ export function HousePageClient({ house: initialHouse, initialMembers }: { house
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[80px]">Rank</TableHead>
+                <TableHead className="w-[60px] text-center">Rank</TableHead>
                 <TableHead>Member</TableHead>
                 <TableHead className="text-right">Points</TableHead>
               </TableRow>
@@ -99,7 +99,7 @@ export function HousePageClient({ house: initialHouse, initialMembers }: { house
             ) : (
                 members.map((member, index) => (
                 <TableRow key={member.id} className={index === 0 ? 'bg-amber-400/10 hover:bg-amber-400/20' : ''}>
-                    <TableCell className="font-medium text-lg text-center w-[80px]">
+                    <TableCell className="font-medium text-lg text-center w-[60px]">
                         {index === 0 ? <Trophy className="w-5 h-5 text-amber-400 inline-block" /> : (index + 1)}
                     </TableCell>
                     <TableCell>
