@@ -50,15 +50,22 @@ export function HouseSelector({ user }: HouseSelectorProps) {
             }
             const userPoints = userDoc.data().points || 0;
 
+            // Define refs for new and old houses
             const newHouseRef = newHouseId ? doc(db, "houses", newHouseId) : null;
             const oldHouseRef = oldHouseId ? doc(db, "houses", oldHouseId) : null;
             
+            // Perform all reads first
+            const oldHouseDoc = oldHouseRef ? await transaction.get(oldHouseRef) : null;
+
+            // Perform all writes
             transaction.update(userRef, { houseId: newHouseId });
 
-            if (oldHouseRef) {
-                transaction.update(oldHouseRef, { points: increment(-userPoints) });
+            // Decrement points from the old house only if it exists
+            if (oldHouseDoc && oldHouseDoc.exists()) {
+                transaction.update(oldHouseRef!, { points: increment(-userPoints) });
             }
 
+            // Increment points for the new house
             if (newHouseRef) {
                 transaction.update(newHouseRef, { points: increment(userPoints) });
             }
