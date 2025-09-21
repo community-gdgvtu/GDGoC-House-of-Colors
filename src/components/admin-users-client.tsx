@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -24,6 +24,9 @@ import { Wand2, Search } from "lucide-react";
 import { Input } from "./ui/input";
 import { BulkManagePointsDialog } from "./bulk-manage-points-dialog";
 import { DeleteUserDialog } from "./delete-user-dialog";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { Skeleton } from "./ui/skeleton";
 
 interface AdminUsersClientProps {
     initialUsers: User[];
@@ -31,12 +34,35 @@ interface AdminUsersClientProps {
 
 export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [backfillLoading, setBackfillLoading] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    setLoading(true);
+    const usersQuery = query(collection(db, "users"), orderBy("name", "asc"));
+    
+    const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
+      const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+      setUsers(usersData);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching real-time users:", error);
+      toast({
+        title: "Error fetching users",
+        description: "Could not retrieve real-time user data.",
+        variant: "destructive",
+      });
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
+
+
   const handleBackfill = async () => {
-    if (!confirm("Are you sure you want to assign new IDs to all existing users? This should only be run once.")) {
+    if (!confirm("This will find all users who do not have a custom ID (e.g., GOOGE001) and assign one to them. Are you sure you want to proceed?")) {
       return;
     }
     setBackfillLoading(true);
@@ -44,7 +70,7 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
       const result = await backfillCustomIds();
       toast({
         title: "Backfill Complete",
-        description: `${result.updatedCount} users were updated with new IDs. Please refresh the page to see the changes.`,
+        description: `${result.updatedCount} users were updated with new IDs. ${result.skippedCount} users already had IDs.`,
       });
     } catch (error: any) {
        toast({
@@ -68,7 +94,8 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
   });
 
   const onUsersUpdated = (updatedUsers: User[]) => {
-    // This function can be called from child dialogs to reflect updates without a full refresh.
+    // This function can be called from child dialogs to optimistically update state,
+    // but the onSnapshot listener is the source of truth.
     setUsers(currentUsers => {
       const userMap = new Map(currentUsers.map(u => [u.id, u]));
       updatedUsers.forEach(u => userMap.set(u.id, u));
@@ -77,6 +104,8 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
   }
 
   const onUserDeleted = (userId: string) => {
+    // Optimistically remove user from local state.
+    // The onSnapshot listener will then confirm this from the database.
     setUsers(currentUsers => currentUsers.filter(u => u.id !== userId));
   }
 
@@ -119,10 +148,28 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredUsers.length === 0 ? (
+            {loading ? (
+              Array.from({length: 10}).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell>
+                     <div className="flex items-center gap-3">
+                      <Skeleton className="h-9 w-9 rounded-full" />
+                      <div>
+                        <Skeleton className="h-4 w-[120px]" />
+                        <Skeleton className="h-3 w-[150px] mt-1" />
+                      </div>
+                    </div>
+                  </TableCell>
+                   <TableCell className="hidden md:table-cell"><Skeleton className="h-8 w-[120px]" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-[50px]" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-6 w-[30px] ml-auto" /></TableCell>
+                  <TableCell className="text-right"><Skeleton className="h-8 w-[150px]" /></TableCell>
+                </TableRow>
+              ))
+            ) : filteredUsers.length === 0 ? (
                 <TableRow>
-                    <TableCell colSpan={5} className="text-center">
-                      {users.length > 0 ? "No users found for your search." : "No users found."}
+                    <TableCell colSpan={5} className="text-center h-24">
+                      {users.length > 0 ? "No users found for your search." : "No users have been added yet."}
                     </TableCell>
                 </TableRow>
             ) : (
@@ -137,7 +184,7 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                       <div>
                         <div className="font-medium">{user.name}</div>
                         <div className="text-xs text-muted-foreground block sm:hidden md:block">{user.email}</div>
-                        <div className="text-xs text-muted-foreground font-mono block sm:hidden md:block">{user.customId}</div>
+                        <div className="text-xs text-muted-foreground font-mono block sm:hidden md:block">{user.customId || 'NO ID'}</div>
                       </div>
                     </div>
                   </TableCell>

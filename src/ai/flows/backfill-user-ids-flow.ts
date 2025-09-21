@@ -16,6 +16,7 @@ export async function backfillCustomIds(): Promise<BackfillResult> {
     const usersToUpdate: User[] = [];
     usersSnapshot.forEach(doc => {
         const user = { id: doc.id, ...doc.data() } as User;
+        // Only backfill users who are missing a customId
         if (!user.customId) {
             usersToUpdate.push(user);
         }
