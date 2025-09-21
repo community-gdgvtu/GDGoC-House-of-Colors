@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { BarChart, Calendar, Shield, Users } from 'lucide-react';
+import { BarChart, Shield, Users } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Logo } from '@/components/icons';

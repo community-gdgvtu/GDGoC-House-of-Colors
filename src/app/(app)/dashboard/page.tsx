@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/chart";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Cell } from "recharts";
 import { type House } from "@/lib/data";
-import { Award, Shield, History, User as UserIcon, Calendar, TrendingUp } from "lucide-react";
+import { Award, Shield, History, User as UserIcon, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useState, useMemo } from "react";
 import { collection, onSnapshot, query, orderBy, Timestamp } from "firebase/firestore";
