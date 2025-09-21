@@ -117,4 +117,3 @@ export function HousePageClient({ house, initialMembers }: { house: House, initi
     </div>
   );
 }
-

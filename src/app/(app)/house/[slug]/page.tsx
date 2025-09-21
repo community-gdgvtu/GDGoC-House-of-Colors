@@ -5,34 +5,25 @@ import { type House, type User } from "@/lib/data";
 import { adminDb } from "@/lib/firebase-admin";
 
 async function getHouseAndMembers(slug: string): Promise<{house: House | null, members: User[]}> {
-    const housesSnapshot = await adminDb.collection("houses").get();
-    let house: House | null = null;
-    
-    const slugify = (text: string) => text.toLowerCase().replace(/\s+/g, '-');
+    const houseDoc = await adminDb.collection("houses").doc(slug).get();
 
-    for (const doc of housesSnapshot.docs) {
-        const houseData = { id: doc.id, ...doc.data() } as House;
-        if (slugify(houseData.name) === slug) {
-            house = houseData;
-            break;
-        }
-    }
-
-    if (!house) {
-        // Fallback to checking by ID if no name match
-        try {
-            const houseDoc = await adminDb.collection("houses").doc(slug).get();
-            if (houseDoc.exists) {
-                house = { id: houseDoc.id, ...houseDoc.data() } as House;
+    if (!houseDoc.exists) {
+         // Try finding by slugified name as a fallback
+        const housesSnapshot = await adminDb.collection("houses").get();
+        const slugify = (text: string) => text.toLowerCase().replace(/\s+/g, '-');
+        for (const doc of housesSnapshot.docs) {
+            const houseData = { id: doc.id, ...doc.data() } as House;
+            if (slugify(houseData.name) === slug) {
+                const usersRef = adminDb.collection("users");
+                const usersSnap = await usersRef.where("houseId", "==", houseData.id).orderBy("points", "desc").limit(1000).get();
+                const members = usersSnap.docs.map(doc => doc.data() as User);
+                return { house: houseData, members };
             }
-        } catch (error) {
-             console.error("Error fetching house by ID as fallback:", error);
         }
-    }
-
-    if (!house) {
         return { house: null, members: [] };
     }
+    
+    const house = { id: houseDoc.id, ...houseDoc.data() } as House;
     
     const usersRef = adminDb.collection("users");
     // Explicitly set a high limit on the server to ensure all members are fetched.
