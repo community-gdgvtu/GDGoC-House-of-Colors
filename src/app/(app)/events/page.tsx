@@ -1,21 +1,33 @@
+
+"use client";
+
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import { events } from "@/lib/data";
 import { PlaceHolderImages } from "@/lib/placeholder-images";
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar } from "lucide-react";
 import Image from "next/image";
 
 export default function EventsPage() {
+  const { toast } = useToast();
 
-    const allEvents = events.map(e => {
-        const pImage = PlaceHolderImages.find(p => p.id === e.id);
-        return {
-            ...e,
-            image: pImage?.imageUrl ?? 'https://picsum.photos/seed/event/600/400',
-            imageHint: pImage?.imageHint ?? 'event',
-        }
-    })
+  const allEvents = events.map(e => {
+    const pImage = PlaceHolderImages.find(p => p.id === e.id);
+    return {
+      ...e,
+      image: pImage?.imageUrl ?? 'https://picsum.photos/seed/event/600/400',
+      imageHint: pImage?.imageHint ?? 'event',
+    }
+  });
+
+  const handleRegister = (eventName: string) => {
+    toast({
+      title: "Registration Successful!",
+      description: `You have successfully registered for ${eventName}.`,
+    });
+  };
 
   return (
     <>
@@ -25,7 +37,7 @@ export default function EventsPage() {
       />
       <div className="grid gap-4 md:gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {allEvents.map((event) => (
-          <Card key={event.id} className="flex flex-col">
+          <Card key={event.id} className="flex flex-col bg-card/50 hover:bg-card/75 transition-all duration-300">
             <CardHeader className="p-0">
                 <Image
                     src={event.image}
@@ -47,7 +59,7 @@ export default function EventsPage() {
                 </div>
             </div>
             <CardFooter className="p-6 pt-0">
-              <Button className="w-full">Register</Button>
+              <Button className="w-full" onClick={() => handleRegister(event.title)}>Register</Button>
             </CardFooter>
           </Card>
         ))}
