@@ -19,14 +19,15 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy } from "lucide-react";
 
-export function HousePageClient({ house }: { house: House }) {
-  const [members, setMembers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
+export function HousePageClient({ house, initialMembers }: { house: House, initialMembers: User[] }) {
+  const [members, setMembers] = useState<User[]>(initialMembers);
+  const [loading, setLoading] = useState(false); // No initial loading as we have server data
 
   useEffect(() => {
     if (!house.id) return;
 
-    setLoading(true);
+    // We already have initialMembers, but we can set up a listener
+    // for real-time updates if the page is kept open.
     const usersQuery = query(
       collection(db, "users"),
       where("houseId", "==", house.id),
@@ -34,12 +35,15 @@ export function HousePageClient({ house }: { house: House }) {
     );
 
     const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
+      // This check prevents the flicker of "No members" on initial load
+      if (snapshot.metadata.hasPendingWrites) return;
+
       const usersData = snapshot.docs.map(doc => doc.data() as User);
       setMembers(usersData);
       setLoading(false);
     }, (error) => {
       console.error("Error fetching house members: ", error);
-      setLoading(false);
+      // Don't set loading to false here if we want to show an error state
     });
 
     // Cleanup subscription on component unmount
@@ -79,7 +83,7 @@ export function HousePageClient({ house }: { house: House }) {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {loading && members.length === 0 ? (
                  Array.from({length: 5}).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell className="font-medium"><Skeleton className="h-5 w-5 rounded-full" /></TableCell>
