@@ -7,8 +7,7 @@ dotenv.config();
 // Prevent re-initialization on hot reloads
 if (!admin.apps.length) {
   try {
-    // When deployed, Vercel will have environment variables.
-    // In local dev, this will fall back to the service account file.
+    // When deployed to Vercel, these environment variables will be available.
     if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
       admin.initializeApp({
         credential: admin.credential.cert({
@@ -20,7 +19,8 @@ if (!admin.apps.length) {
       });
        console.log('[Firebase Admin] Initialized with Environment Variables.');
     } else {
-       // Fallback for local development using ADC or a service account file
+       // For local development, it will fall back to Application Default Credentials.
+       // Ensure you've run `gcloud auth application-default login` in your terminal.
        console.log('[Firebase Admin] Initializing with Application Default Credentials for local development.');
        admin.initializeApp({
          credential: admin.credential.applicationDefault(),

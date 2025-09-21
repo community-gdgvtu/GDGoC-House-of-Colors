@@ -1,4 +1,3 @@
-
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
@@ -6,7 +5,7 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCfBmfEsoo03l3j7xuoVEP8pEbVhsUPyTE",
+  apiKey: "AIzaSyC5vaSbiO0xmm4yD2oV4WzEBCoSNTv2Y10",
   authDomain: "gdgoc-vtu.firebaseapp.com",
   projectId: "gdgoc-vtu",
   storageBucket: "gdgoc-vtu.firebasestorage.app",

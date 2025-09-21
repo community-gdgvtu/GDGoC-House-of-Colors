@@ -20,7 +20,6 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { ManagePointsDialog } from "@/components/manage-points-dialog";
 import { HouseSelector } from "@/components/house-selector";
-import { BulkAddUsersDialog } from "@/components/bulk-add-users-dialog";
 
 export default function AdminDashboardPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -42,10 +41,7 @@ export default function AdminDashboardPage() {
 
   return (
     <>
-      <div className="flex justify-between items-start">
-        <PageHeader title="Admin Overview" description="Manage your community and events from one place." />
-        <BulkAddUsersDialog />
-      </div>
+      <PageHeader title="Admin Overview" description="Manage your community and events from one place." />
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
