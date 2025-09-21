@@ -1,3 +1,4 @@
+
 import admin from 'firebase-admin';
 
 // Check if the app is already initialized to prevent errors during hot-reloads in development.
@@ -9,7 +10,8 @@ if (!admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.applicationDefault(),
       // Make sure to replace this with your actual databaseURL
-      databaseURL: 'https://gdgoc-vtu.firebaseio.com'
+      databaseURL: 'https://gdgoc-vtu.firebaseio.com',
+      projectId: 'gdgoc-vtu',
     });
   } catch (error) {
     console.error('Firebase admin initialization error', error);
