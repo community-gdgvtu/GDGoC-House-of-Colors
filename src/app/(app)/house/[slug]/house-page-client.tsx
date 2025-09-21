@@ -14,10 +14,36 @@ import {
 } from "@/components/ui/table";
 import { type User, type House } from "@/lib/data";
 import { Trophy } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export function HousePageClient({ house, initialMembers }: { house: House, initialMembers: User[] }) {
-  const [members] = useState<User[]>(initialMembers);
+  const [members, setMembers] = useState<User[]>(initialMembers);
+
+  useEffect(() => {
+    if (!house.id) return;
+    
+    const membersQuery = query(
+        collection(db, "users"), 
+        where("houseId", "==", house.id),
+        orderBy("points", "desc")
+    );
+
+    const unsubscribe = onSnapshot(membersQuery, (snapshot) => {
+        // This check prevents overwriting server-rendered data with empty cache results on initial load.
+        if (snapshot.metadata.fromCache && snapshot.docs.length === 0) {
+            return;
+        }
+        const usersData = snapshot.docs.map(doc => doc.data() as User);
+        setMembers(usersData);
+    }, (error) => {
+        console.error(`Error fetching members for house ${house.name}:`, error);
+    });
+
+    return () => unsubscribe();
+  }, [house.id, house.name]);
+
 
   return (
     <div className="space-y-6">
