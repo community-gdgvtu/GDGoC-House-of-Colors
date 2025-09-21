@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -17,27 +17,15 @@ import { type User } from "@/lib/data";
 import { ManagePointsDialog } from "@/components/manage-points-dialog";
 import { HouseSelector } from "@/components/house-selector";
 import { BulkAddUsersDialog } from "@/components/bulk-add-users-dialog";
-import { db } from "@/lib/firebase";
-import { collection, onSnapshot } from "firebase/firestore";
 
 interface AdminUsersClientProps {
     initialUsers: User[];
 }
 
 export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
+  // The user list is now exclusively managed by the server-fetched initialUsers prop.
+  // The problematic client-side onSnapshot listener has been removed.
   const [users, setUsers] = useState<User[]>(initialUsers);
-  
-  // Listen for real-time updates after the initial server-side render
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
-        const updatedUsers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as User[];
-        setUsers(updatedUsers);
-    }, (error) => {
-        console.error("Error listening to user updates:", error);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   return (
     <Card>
