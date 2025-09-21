@@ -20,14 +20,16 @@ import { BulkAddUsersDialog } from "@/components/bulk-add-users-dialog";
 import { Button } from "./ui/button";
 import { backfillCustomIds } from "@/ai/flows/backfill-user-ids-flow";
 import { useToast } from "@/hooks/use-toast";
-import { Wand2 } from "lucide-react";
+import { Wand2, Search } from "lucide-react";
+import { Input } from "./ui/input";
 
 interface AdminUsersClientProps {
     initialUsers: User[];
 }
 
 export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const [users] = useState<User[]>(initialUsers);
+  const [searchQuery, setSearchQuery] = useState("");
   const [backfillLoading, setBackfillLoading] = useState(false);
   const { toast } = useToast();
 
@@ -53,16 +55,39 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
     }
   }
 
+  const filteredUsers = users.filter(user => {
+    const query = searchQuery.toLowerCase();
+    return (
+      user.name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query) ||
+      user.customId?.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <Card>
-      <CardHeader className="flex flex-row justify-between items-center">
-        <CardTitle>All Users</CardTitle>
-        <div className="flex gap-2">
-           <Button variant="outline" onClick={handleBackfill} disabled={backfillLoading}>
-             <Wand2 className="mr-2" />
-             {backfillLoading ? "Backfilling..." : "Backfill User IDs"}
-           </Button>
-          <BulkAddUsersDialog />
+      <CardHeader>
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+          <CardTitle>All Users</CardTitle>
+          <div className="flex gap-2 sm:gap-4 flex-col sm:flex-row">
+            <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search users..."
+                  className="pl-8 sm:w-[250px] lg:w-[300px]"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleBackfill} disabled={backfillLoading}>
+                <Wand2 className="mr-2" />
+                {backfillLoading ? "Backfilling..." : "Backfill IDs"}
+              </Button>
+              <BulkAddUsersDialog />
+            </div>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -77,12 +102,14 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.length === 0 ? (
+            {filteredUsers.length === 0 ? (
                 <TableRow>
-                    <TableCell colSpan={5} className="text-center">No users found.</TableCell>
+                    <TableCell colSpan={5} className="text-center">
+                      {users.length > 0 ? "No users found for your search." : "No users found."}
+                    </TableCell>
                 </TableRow>
             ) : (
-              users.map((user) => (
+              filteredUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-3">
