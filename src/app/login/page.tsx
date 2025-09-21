@@ -12,7 +12,6 @@ import { Logo } from "@/components/icons";
 import { auth } from "@/lib/firebase";
 import { 
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
   sendPasswordResetEmail
 } from "firebase/auth";
 import { useRouter } from "next/navigation";
@@ -35,19 +34,6 @@ export default function LoginPage() {
       console.error("Error during sign-in:", error);
       toast({
         title: "Sign-in Failed",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleSignUp = async () => {
-    try {
-      await createUserWithEmailAndPassword(auth, email, password);
-    } catch (error: any) {
-      console.error("Error during sign-up:", error);
-       toast({
-        title: "Sign-up Failed",
         description: error.message,
         variant: "destructive"
       });
@@ -96,7 +82,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center space-y-2 text-center">
             <Logo className="h-12 w-12" />
             <h1 className="text-3xl font-bold font-headline">GDGoC VTU Portal</h1>
-            <p className="text-muted-foreground">Sign in or create an account to continue</p>
+            <p className="text-muted-foreground">Sign in to your account to continue</p>
         </div>
         <Card>
             <CardHeader>
@@ -117,18 +103,14 @@ export default function LoginPage() {
                     </div>
                     <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} />
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button onClick={handleSignIn} className="w-full">
-                      <LogIn className="mr-2 h-4 w-4" /> Sign In
-                  </Button>
-                  <Button onClick={handleSignUp} variant="secondary" className="w-full">
-                      Sign Up
-                  </Button>
-                </div>
+                <Button onClick={handleSignIn} className="w-full">
+                    <LogIn className="mr-2 h-4 w-4" /> Sign In
+                </Button>
             </CardContent>
         </Card>
         <div className="text-center text-sm">
-          <Link href="/" className="underline text-muted-foreground">
+          <p className="text-xs text-muted-foreground">If you don't have an account, please contact an admin.</p>
+          <Link href="/" className="underline text-muted-foreground mt-2 inline-block">
             Back to Home
           </Link>
         </div>
