@@ -15,7 +15,7 @@ import {
 import { type User, type House } from "@/lib/data";
 import { Trophy } from "lucide-react";
 import { useState, useEffect } from "react";
-import { collection, onSnapshot, query, where, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query, where, orderBy, limit } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 export function HousePageClient({ house, initialMembers }: { house: House, initialMembers: User[] }) {
@@ -27,7 +27,8 @@ export function HousePageClient({ house, initialMembers }: { house: House, initi
     const membersQuery = query(
         collection(db, "users"), 
         where("houseId", "==", house.id),
-        orderBy("points", "desc")
+        orderBy("points", "desc"),
+        limit(1000)
     );
 
     const unsubscribe = onSnapshot(membersQuery, (snapshot) => {
@@ -86,8 +87,7 @@ export function HousePageClient({ house, initialMembers }: { house: House, initi
                 members.map((member, index) => (
                   <TableRow key={member.id} className={index === 0 ? 'bg-amber-400/10 hover:bg-amber-400/20' : ''}>
                     <TableCell className="font-medium text-lg text-center">
-                        {index === 0 && <Trophy className="w-5 h-5 text-amber-400 inline-block" />}
-                        {index > 0 && (index + 1)}
+                        {index === 0 ? <Trophy className="w-5 h-5 text-amber-400 inline-block" /> : (index + 1)}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
