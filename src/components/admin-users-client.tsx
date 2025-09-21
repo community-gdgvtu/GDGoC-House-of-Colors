@@ -17,21 +17,53 @@ import { type User } from "@/lib/data";
 import { ManagePointsDialog } from "@/components/manage-points-dialog";
 import { HouseSelector } from "@/components/house-selector";
 import { BulkAddUsersDialog } from "@/components/bulk-add-users-dialog";
+import { Button } from "./ui/button";
+import { backfillCustomIds } from "@/ai/flows/backfill-user-ids-flow";
+import { useToast } from "@/hooks/use-toast";
+import { Wand2 } from "lucide-react";
 
 interface AdminUsersClientProps {
     initialUsers: User[];
 }
 
 export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
-  // The user list is now exclusively managed by the server-fetched initialUsers prop.
-  // The problematic client-side onSnapshot listener has been removed.
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const [backfillLoading, setBackfillLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleBackfill = async () => {
+    if (!confirm("Are you sure you want to assign new IDs to all existing users? This should only be run once.")) {
+      return;
+    }
+    setBackfillLoading(true);
+    try {
+      const result = await backfillCustomIds();
+      toast({
+        title: "Backfill Complete",
+        description: `${result.updatedCount} users were updated with new IDs. Please refresh the page to see the changes.`,
+      });
+    } catch (error: any) {
+       toast({
+        title: "Backfill Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setBackfillLoading(false);
+    }
+  }
 
   return (
     <Card>
       <CardHeader className="flex flex-row justify-between items-center">
         <CardTitle>All Users</CardTitle>
-        <BulkAddUsersDialog />
+        <div className="flex gap-2">
+           <Button variant="outline" onClick={handleBackfill} disabled={backfillLoading}>
+             <Wand2 className="mr-2" />
+             {backfillLoading ? "Backfilling..." : "Backfill User IDs"}
+           </Button>
+          <BulkAddUsersDialog />
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
