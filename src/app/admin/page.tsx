@@ -15,8 +15,6 @@ export const revalidate = 0;
 
 async function getDashboardData() {
   try {
-    // Only fetch data that is needed for server components, like houses.
-    // The full user list will be fetched by the client component.
     const housesSnapshot = await adminDb.collection("houses").orderBy("points", "desc").get();
     const houses = housesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as House[];
     
