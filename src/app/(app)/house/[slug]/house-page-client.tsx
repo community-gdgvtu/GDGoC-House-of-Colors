@@ -25,7 +25,7 @@ export function HousePageClient({ house }: { house: House }) {
     if (!house) return;
 
     // This query is now authorized by the new, correct security rules for all authenticated users.
-    // We are filtering by houseId and ordering by points.
+    // It filters by houseId and orders by points, which requires a composite index.
     const usersQuery = query(
       collection(db, "users"),
       where("houseId", "==", house.id),
