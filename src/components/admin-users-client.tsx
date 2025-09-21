@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Wand2, Search } from "lucide-react";
 import { Input } from "./ui/input";
 import { BulkManagePointsDialog } from "./bulk-manage-points-dialog";
+import { DeleteUserDialog } from "./delete-user-dialog";
 
 interface AdminUsersClientProps {
     initialUsers: User[];
@@ -75,6 +76,10 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
     });
   }
 
+  const onUserDeleted = (userId: string) => {
+    setUsers(currentUsers => currentUsers.filter(u => u.id !== userId));
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -110,7 +115,7 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
               <TableHead>House</TableHead>
               <TableHead>Role</TableHead>
               <TableHead className="text-right">Points</TableHead>
-              <TableHead className="w-[240px] text-right">Actions</TableHead>
+              <TableHead className="w-[340px] text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -154,6 +159,7 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                       <>
                         <ManagePointsDialog user={user} mode="add" onUpdate={onUsersUpdated} />
                         <ManagePointsDialog user={user} mode="deduct" onUpdate={onUsersUpdated} />
+                        <DeleteUserDialog user={user} onUserDeleted={onUserDeleted} />
                       </>
                     )}
                   </TableCell>
