@@ -11,7 +11,8 @@ export type House = {
 };
 
 export type User = {
-  id: string;
+  id: string; // This is the Firebase Auth UID
+  customId: string; // This is the new GOOGE001 style ID
   name: string;
   email: string;
   points: number;

@@ -61,6 +61,7 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                       <div>
                         <div className="font-medium">{user.name}</div>
                         <div className="text-xs text-muted-foreground">{user.email}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{user.customId}</div>
                       </div>
                     </div>
                   </TableCell>
