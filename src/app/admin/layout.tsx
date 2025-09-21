@@ -4,7 +4,6 @@
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
-  Calendar,
   Home,
   Menu,
   Search,
@@ -36,7 +35,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navItems = [
     { href: "/admin", icon: Home, label: "Overview" },
     { href: "#", icon: Users, label: "Users" },
-    { href: "#", icon: Calendar, label: "Events" },
     { href: "/admin/profile", icon: User, label: "Profile"},
     { href: "#", icon: Settings, label: "Settings" },
   ];
@@ -119,7 +117,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="search"
-                  placeholder="Search users or events..."
+                  placeholder="Search users..."
                   className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
                 />
               </div>

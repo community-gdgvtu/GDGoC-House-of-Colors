@@ -1,7 +1,7 @@
 
 import { PageHeader } from "@/components/page-header";
-import { events, type User } from "@/lib/data";
-import { Award, Calendar, Users as UsersIcon } from "lucide-react";
+import { type User } from "@/lib/data";
+import { Award, Users as UsersIcon } from "lucide-react";
 import { adminDb } from "@/lib/firebase-admin";
 import { AdminUsersClient } from "@/components/admin-users-client";
 
@@ -23,12 +23,11 @@ export default async function AdminDashboardPage() {
   
   const totalUsers = users.filter(u => u.role === 'user').length;
   const totalPoints = users.reduce((acc, user) => acc + (user.points > 0 ? user.points : 0), 0);
-  const totalEvents = events.length;
 
   return (
     <>
       <PageHeader title="Admin Overview" description="Manage your community and events from one place." />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -47,16 +46,6 @@ export default async function AdminDashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">{totalPoints}</div>
             <p className="text-xs text-muted-foreground">across all houses</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Events</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalEvents}</div>
-            <p className="text-xs text-muted-foreground">scheduled for the year</p>
           </CardContent>
         </Card>
       </div>

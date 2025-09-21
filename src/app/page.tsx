@@ -19,9 +19,6 @@ export default function Home() {
           <Link href="/login" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
             Login
           </Link>
-          <Link href="/events" className="text-sm font-medium hover:underline underline-offset-4" prefetch={false}>
-            Events
-          </Link>
         </nav>
       </header>
       <main className="flex-1">
@@ -52,9 +49,6 @@ export default function Home() {
                   <Button asChild size="lg">
                     <Link href="/login">Get Started</Link>
                   </Button>
-                  <Button asChild variant="outline" size="lg">
-                    <Link href="/events">View Events</Link>
-                  </Button>
                 </div>
               </div>
             </div>
@@ -72,14 +66,7 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-4 lg:max-w-none mt-12">
-              <div className="grid gap-2 text-center p-6 rounded-lg hover:bg-card transition-colors">
-                <div className="flex justify-center items-center mb-2">
-                  <Calendar className="h-10 w-10 text-primary"/>
-                </div>
-                <h3 className="text-xl font-bold">Event Listings</h3>
-                <p className="text-sm text-muted-foreground">Browse and get details on all upcoming workshops, talks, and competitions.</p>
-              </div>
+            <div className="mx-auto grid max-w-5xl items-start gap-8 sm:grid-cols-2 md:gap-12 lg:grid-cols-3 lg:max-w-none mt-12">
               <div className="grid gap-2 text-center p-6 rounded-lg hover:bg-card transition-colors">
                 <div className="flex justify-center items-center mb-2">
                   <BarChart className="h-10 w-10 text-primary"/>

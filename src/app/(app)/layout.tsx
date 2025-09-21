@@ -46,7 +46,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
-    { href: "/events", icon: Calendar, label: "Events" },
   ];
 
   if (loading || !user) {
