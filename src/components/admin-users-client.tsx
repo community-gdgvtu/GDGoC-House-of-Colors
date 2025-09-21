@@ -24,7 +24,7 @@ import { Wand2, Search, ArrowUpDown, Download } from "lucide-react";
 import { Input } from "./ui/input";
 import { BulkManagePointsDialog } from "./bulk-manage-points-dialog";
 import { DeleteUserDialog } from "./delete-user-dialog";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Skeleton } from "./ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
@@ -55,6 +55,8 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
         setHouses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as House)));
     });
 
+    // The component now starts with loading=true until the first snapshot is received.
+    setLoading(true);
     const usersQuery = query(collection(db, "users"));
     const unsubUsers = onSnapshot(usersQuery, (snapshot) => {
       const usersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
@@ -329,5 +331,3 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
     </Card>
   );
 }
-
-    
