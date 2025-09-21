@@ -13,21 +13,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { type User, type House } from "@/lib/data";
-import { db } from "@/lib/firebase";
-import { collection, query, where, onSnapshot, orderBy } from "firebase/firestore";
-import { useEffect, useState } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy } from "lucide-react";
+import { useEffect, useState } from "react";
+import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 export function HousePageClient({ house, initialMembers }: { house: House, initialMembers: User[] }) {
   const [members, setMembers] = useState<User[]>(initialMembers);
-  const [loading, setLoading] = useState(false); // No initial loading as we have server data
 
   useEffect(() => {
     if (!house.id) return;
-
-    // We already have initialMembers, but we can set up a listener
-    // for real-time updates if the page is kept open.
+    
+    // Set up a real-time listener for member updates.
     const usersQuery = query(
       collection(db, "users"),
       where("houseId", "==", house.id),
@@ -35,20 +32,15 @@ export function HousePageClient({ house, initialMembers }: { house: House, initi
     );
 
     const unsubscribe = onSnapshot(usersQuery, (snapshot) => {
-      // This check prevents the flicker of "No members" on initial load
-      if (snapshot.metadata.hasPendingWrites) return;
-
       const usersData = snapshot.docs.map(doc => doc.data() as User);
       setMembers(usersData);
-      setLoading(false);
     }, (error) => {
-      console.error("Error fetching house members: ", error);
-      // Don't set loading to false here if we want to show an error state
+      console.error("Error fetching real-time house members: ", error);
     });
 
-    // Cleanup subscription on component unmount
     return () => unsubscribe();
   }, [house.id]);
+
 
   return (
     <div className="space-y-6">
@@ -83,23 +75,7 @@ export function HousePageClient({ house, initialMembers }: { house: House, initi
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading && members.length === 0 ? (
-                 Array.from({length: 5}).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="font-medium"><Skeleton className="h-5 w-5 rounded-full" /></TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Skeleton className="h-9 w-9 rounded-full" />
-                          <div>
-                            <Skeleton className="h-4 w-24 mb-1" />
-                            <Skeleton className="h-3 w-32" />
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right"><Skeleton className="h-5 w-10 ml-auto" /></TableCell>
-                    </TableRow>
-                  ))
-              ) : members.length === 0 ? (
+              {members.length === 0 ? (
                  <TableRow>
                   <TableCell colSpan={3} className="text-center h-24">No members in this house yet.</TableCell>
                 </TableRow>
