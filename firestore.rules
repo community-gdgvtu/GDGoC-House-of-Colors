@@ -1,44 +1,37 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isAdmin() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    // By default, deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
     }
 
-    // Houses can be read by any authenticated user. Admins can write.
+    // Allow authenticated users to read public data
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      // Allow a user to update their own document (e.g., their name)
+      // but not their points, role, or house.
+      allow update: if request.auth.uid == userId
+                    && request.resource.data.keys().hasOnly(['name', 'id', 'customId', 'email', 'points', 'houseId', 'role', 'avatar'])
+                    && request.resource.data.name != resource.data.name;
+    }
+
+    match /users/{userId}/point_history/{historyId} {
+      // Allow a user to read their own point history
+      allow read: if request.auth.uid == userId;
+    }
+
+    // Allow authenticated users to read house data
     match /houses/{houseId} {
       allow read: if request.auth != null;
-      allow write: if isAdmin();
     }
     
-    match /users/{userId} {
-      // Admins can list users if they query by role. 
-      // Authenticated users can list users if they query by houseId.
-      allow list: if (isAdmin() && request.query.where.keys().hasAny(['role'])) ||
-                   (request.auth != null && request.query.where.keys().hasAll(['houseId']));
-      
-      // A user can create their own document. Admins can create any user.
-      allow create: if request.auth.uid == userId || isAdmin();
-      
-      // A user can read their own data. Admins can read any user data.
-      allow get: if request.auth.uid == userId || isAdmin();
-      
-      // A user can update their own data. Admins can update any user.
-      allow update: if request.auth.uid == userId || isAdmin();
-      
-      // Only admins can delete users.
-      allow delete: if isAdmin();
-      
-      // Point history subcollection rules
-      match /point_history/{historyId} {
-        // A user can read their own point history. Admins can read anyone's.
-        allow list, get: if request.auth.uid == userId || isAdmin();
-        // Only admins can create point history records.
-        allow create: if isAdmin();
-        // Point history is immutable.
-        allow update, delete: if false;
-      }
+    // Allow authenticated users to read metadata (for user counter)
+    match /metadata/{docId} {
+      allow read: if request.auth != null;
     }
   }
 }
