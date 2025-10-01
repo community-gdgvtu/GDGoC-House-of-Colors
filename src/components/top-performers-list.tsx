@@ -8,11 +8,10 @@ import {
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trophy } from "lucide-react";
-import { type User, type House } from "@/lib/data";
+import { type User } from "@/lib/data";
 
-export function TopPerformersList({ users, houses }: { users: User[], houses: House[] }) {
+export function TopPerformersList({ users }: { users: User[] }) {
     const topUsers = users.slice(0, 5);
-    const houseMap = new Map(houses.map(h => [h.id, h]));
 
     return (
         <Card className="col-span-12 lg:col-span-3">
@@ -36,7 +35,7 @@ export function TopPerformersList({ users, houses }: { users: User[], houses: Ho
                           </Avatar>
                           <div>
                             <div className="font-medium">{user.name}</div>
-                            <div className="text-xs text-muted-foreground">{houseMap.get(user.houseId)?.name || 'Unassigned'}</div>
+                            <div className="text-xs text-muted-foreground">{user.customId}</div>
                           </div>
                         </div>
                       </TableCell>

@@ -2,13 +2,11 @@
 "use client";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { User } from "@/lib/data";
 import {
   Home,
   Menu,
   Search,
-  Shield,
-  Calendar
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/icons";
@@ -21,13 +19,13 @@ import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
-import type { House } from "@/lib/data";
+import type { Community } from "@/lib/data";
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [houses, setHouses] = useState<House[]>([]);
+  const [communities, setCommunities] = useState<Community[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -36,9 +34,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user, loading, router]);
   
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "houses"), (snapshot) => {
-      const housesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as House[];
-      setHouses(housesData);
+    const unsub = onSnapshot(collection(db, "communities"), (snapshot) => {
+      const communitiesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Community[];
+      setCommunities(communitiesData);
     });
 
     return () => unsub();
@@ -79,13 +77,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </Link>
               ))}
                <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground">
-                <Shield className="h-4 w-4" />
-                Houses
+                <Users className="h-4 w-4" />
+                Communities
               </div>
               <div className="ml-7">
-                {houses.map(house => (
-                    <Link key={house.id} href={`/house/${house.id}`} className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-xs">
-                        {house.name}
+                {communities.map(community => (
+                    <Link key={community.id} href={`/community/${community.id}`} className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-xs">
+                        {community.name}
                     </Link>
                 ))}
               </div>
@@ -129,13 +127,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 ))}
                 <div className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground">
-                    <Shield className="h-5 w-5" />
-                    Houses
+                    <Users className="h-5 w-5" />
+                    Communities
                 </div>
                 <div className="ml-4">
-                    {houses.map(house => (
-                        <Link key={house.id} href={`/house/${house.id}`} className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground text-base">
-                            {house.name}
+                    {communities.map(community => (
+                        <Link key={community.id} href={`/community/${community.id}`} className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground hover:text-foreground text-base">
+                            {community.name}
                         </Link>
                     ))}
                 </div>

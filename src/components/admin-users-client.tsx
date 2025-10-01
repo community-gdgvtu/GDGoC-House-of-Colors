@@ -13,14 +13,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { type User, type House } from "@/lib/data";
+import { type User, type Community } from "@/lib/data";
 import { ManagePointsDialog } from "@/components/manage-points-dialog";
-import { HouseSelector } from "@/components/house-selector";
 import { BulkAddUsersDialog } from "@/components/bulk-add-users-dialog";
 import { Button } from "./ui/button";
 import { backfillCustomIds } from "@/ai/flows/backfill-user-ids-flow";
 import { useToast } from "@/hooks/use-toast";
-import { Wand2, Search, ArrowUpDown, Download } from "lucide-react";
+import { Wand2, Search, ArrowUpDown, Download, Users, Crown } from "lucide-react";
 import { Input } from "./ui/input";
 import { BulkManagePointsDialog } from "./bulk-manage-points-dialog";
 import { DeleteUserDialog } from "./delete-user-dialog";
@@ -28,8 +27,9 @@ import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Skeleton } from "./ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { useAuth } from "@/hooks/use-auth";
 
-type SortKey = keyof User | 'houseName';
+type SortKey = keyof User | 'communityName';
 type SortDirection = 'asc' | 'desc';
 
 interface AdminUsersClientProps {
@@ -37,25 +37,26 @@ interface AdminUsersClientProps {
 }
 
 export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
+  const { user: adminUser } = useAuth();
   const [users, setUsers] = useState<User[]>(initialUsers);
-  const [houses, setHouses] = useState<House[]>([]);
+  const [communities, setCommunities] = useState<Community[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [houseFilter, setHouseFilter] = useState("all");
+  const [communityFilter, setCommunityFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [backfillLoading, setBackfillLoading] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const { toast } = useToast();
 
-  const houseMap = useMemo(() => new Map(houses.map(h => [h.id, h])), [houses]);
+  const communityMap = useMemo(() => new Map(communities.map(c => [c.id, c])), [communities]);
 
   useEffect(() => {
-    const housesQuery = query(collection(db, "houses"));
-    const unsubHouses = onSnapshot(housesQuery, (snapshot) => {
-        setHouses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as House)));
+    const communitiesQuery = query(collection(db, "communities"));
+    const unsubCommunities = onSnapshot(communitiesQuery, (snapshot) => {
+        setCommunities(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Community)));
     });
 
-    // The component now starts with loading=true until the first snapshot is received.
     setLoading(true);
     const usersQuery = query(collection(db, "users"));
     const unsubUsers = onSnapshot(usersQuery, (snapshot) => {
@@ -73,14 +74,14 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
     });
 
     return () => {
-      unsubHouses();
+      unsubCommunities();
       unsubUsers();
     };
   }, [toast]);
 
 
   const handleBackfill = async () => {
-    if (!confirm("This will find all users who do not have a custom ID (e.g., GOOGE001) and assign one to them based on the current user count. This is irreversible. Are you sure?")) {
+    if (!confirm("This will find all users who do not have a custom ID (e.g., GDGVTU001) and assign one to them. This is irreversible. Are you sure?")) {
       return;
     }
     setBackfillLoading(true);
@@ -119,21 +120,25 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                               user.email.toLowerCase().includes(query) ||
                               customId.toLowerCase().includes(query);
         
-        const matchesHouse = houseFilter === 'all' || user.houseId === houseFilter;
+        const matchesCommunity = communityFilter === 'all' || user.communityId === communityFilter;
+        const matchesRole = roleFilter === 'all' || user.role === roleFilter;
 
-        return matchesSearch && matchesHouse;
+        return matchesSearch && matchesCommunity && matchesRole;
       })
       .sort((a, b) => {
-        let valA: string | number = '';
-        let valB: string | number = '';
+        let valA: string | number | undefined = '';
+        let valB: string | number | undefined = '';
 
-        if (sortKey === 'houseName') {
-          valA = houseMap.get(a.houseId)?.name || 'Z'; // Unassigned last
-          valB = houseMap.get(b.houseId)?.name || 'Z';
+        if (sortKey === 'communityName') {
+          valA = communityMap.get(a.communityId || '')?.name || 'Z'; 
+          valB = communityMap.get(b.communityId || '')?.name || 'Z';
         } else {
           valA = a[sortKey as keyof User];
           valB = b[sortKey as keyof User];
         }
+        
+        if(valA === undefined) valA = '';
+        if(valB === undefined) valB = '';
 
         if (typeof valA === 'string') valA = valA.toLowerCase();
         if (typeof valB === 'string') valB = valB.toLowerCase();
@@ -142,17 +147,17 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
         if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
         return 0;
       });
-  }, [users, searchQuery, houseFilter, sortKey, sortDirection, houseMap]);
+  }, [users, searchQuery, communityFilter, roleFilter, sortKey, sortDirection, communityMap]);
 
 
   const downloadCSV = () => {
-    const headers = ["customId", "name", "email", "houseName", "points"];
+    const headers = ["customId", "name", "email", "role", "communityName", "points"];
     const csvRows = [headers.join(",")];
 
     sortedAndFilteredUsers.forEach(user => {
-      const houseName = houseMap.get(user.houseId)?.name || 'Unassigned';
-      const row = [user.customId, user.name, user.email, houseName, user.points];
-      csvRows.push(row.join(","));
+      const communityName = communityMap.get(user.communityId || '')?.name || 'Unassigned';
+      const row = [user.customId, user.name, user.email, user.role, communityName, user.points];
+      csvRows.push(row.map(val => `"${val}"`).join(","));
     });
 
     const csvContent = csvRows.join("\n");
@@ -188,6 +193,18 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
     return <ArrowUpDown className="ml-2 h-4 w-4 text-primary" />;
   }
 
+  const getRoleIcon = (role: User['role']) => {
+    switch (role) {
+      case 'organizer': return <Crown className="h-4 w-4 text-amber-500" />;
+      case 'manager': return <Users className="h-4 w-4 text-blue-500" />;
+      default: return null;
+    }
+  }
+
+  if (!adminUser) {
+      return <p>Loading...</p>
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -204,18 +221,29 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
-             <Select value={houseFilter} onValueChange={setHouseFilter}>
+             <Select value={communityFilter} onValueChange={setCommunityFilter}>
               <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue placeholder="Filter by house" />
+                <SelectValue placeholder="Filter by community" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Houses</SelectItem>
-                {houses.map(h => <SelectItem key={h.id} value={h.id}>{h.name}</SelectItem>)}
+                <SelectItem value="all">All Communities</SelectItem>
+                {communities.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-full sm:w-[140px]">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="organizer">Organizer</SelectItem>
+                <SelectItem value="manager">Manager</SelectItem>
+                <SelectItem value="user">User</SelectItem>
               </SelectContent>
             </Select>
 
             <div className="flex gap-2 flex-wrap">
-               <BulkManagePointsDialog onUpdate={onUsersUpdated} />
+               <BulkManagePointsDialog awardingUser={adminUser} onUpdate={onUsersUpdated} />
                <BulkAddUsersDialog />
                <Button variant="outline" onClick={handleBackfill} disabled={backfillLoading}>
                 <Wand2 className="mr-2 h-4 w-4" />
@@ -240,13 +268,18 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                   {getSortIcon('name')}
                 </Button>
               </TableHead>
-              <TableHead className="hidden md:table-cell">
-                 <Button variant="ghost" onClick={() => handleSort('houseName')}>
-                  House
-                  {getSortIcon('houseName')}
+              <TableHead className="hidden sm:table-cell">
+                <Button variant="ghost" onClick={() => handleSort('role')}>
+                    Role
+                    {getSortIcon('role')}
                 </Button>
               </TableHead>
-              <TableHead className="hidden sm:table-cell">Role</TableHead>
+               <TableHead className="hidden md:table-cell">
+                 <Button variant="ghost" onClick={() => handleSort('communityName')}>
+                  Community
+                  {getSortIcon('communityName')}
+                </Button>
+              </TableHead>
               <TableHead className="text-right">
                 <Button variant="ghost" onClick={() => handleSort('points')}>
                   Points
@@ -269,8 +302,8 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                       </div>
                     </div>
                   </TableCell>
-                   <TableCell className="hidden md:table-cell"><Skeleton className="h-8 w-[120px]" /></TableCell>
-                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-[50px]" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-[70px]" /></TableCell>
+                  <TableCell className="hidden md:table-cell"><Skeleton className="h-8 w-[120px]" /></TableCell>
                   <TableCell className="text-right"><Skeleton className="h-6 w-[30px] ml-auto" /></TableCell>
                   <TableCell className="text-right"><Skeleton className="h-8 w-[150px]" /></TableCell>
                 </TableRow>
@@ -291,32 +324,28 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <div className="font-medium">{user.name}</div>
+                        <div className="font-medium flex items-center gap-2">{user.name} {getRoleIcon(user.role)}</div>
                         <div className="text-xs text-muted-foreground block sm:hidden md:block">{user.email}</div>
                         <div className="text-xs text-muted-foreground font-mono block sm:hidden md:block">{user.customId || 'NO ID'}</div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {user.role === 'admin' ? (
-                      <span>-</span>
-                    ) : (
-                      <HouseSelector user={user} onUpdate={onUsersUpdated} />
-                    )}
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell">
-                    <Badge variant={user.role === 'admin' ? 'destructive' : 'secondary'}>
+                   <TableCell className="hidden sm:table-cell">
+                    <Badge variant={user.role === 'organizer' ? 'destructive' : user.role === 'manager' ? 'default' : 'secondary'}>
                       {user.role}
                     </Badge>
                   </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    {communityMap.get(user.communityId || '')?.name || 'Unassigned'}
+                  </TableCell>
                   <TableCell className="text-right font-medium tabular-nums">
-                     {user.role === 'admin' ? "-" : user.points}
+                     {user.role === 'organizer' ? "-" : user.points}
                   </TableCell>
                   <TableCell className="text-right">
-                    {user.role === 'user' && (
+                    {user.id !== adminUser.id && (
                       <div className="flex flex-col sm:flex-row gap-2 justify-end">
-                        <ManagePointsDialog user={user} mode="add" onUpdate={onUsersUpdated} />
-                        <ManagePointsDialog user={user} mode="deduct" onUpdate={onUsersUpdated} />
+                        <ManagePointsDialog user={user} awardingUser={adminUser} mode="add" onUpdate={onUsersUpdated} />
+                        <ManagePointsDialog user={user} awardingUser={adminUser} mode="deduct" onUpdate={onUsersUpdated} />
                         <DeleteUserDialog user={user} onUserDeleted={onUserDeleted} />
                       </div>
                     )}

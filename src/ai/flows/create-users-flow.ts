@@ -4,7 +4,6 @@
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
 import { BulkCreateUsersInput, BulkCreateUsersOutput } from "@/lib/types";
 import { User } from "@/lib/data";
-import { FieldValue } from "firebase-admin/firestore";
 
 function generateRandomPassword(length = 12) {
     const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
@@ -37,7 +36,7 @@ export async function bulkCreateUsers(input: BulkCreateUsersInput): Promise<Bulk
                 
                 transaction.set(counterRef, { count: newCount }, { merge: true });
 
-                return `GOOGE${String(newCount).padStart(3, '0')}`;
+                return `GDGVTU${String(newCount).padStart(3, '0')}`;
             });
 
             const newUser: User = {
@@ -46,7 +45,6 @@ export async function bulkCreateUsers(input: BulkCreateUsersInput): Promise<Bulk
                 name: email.split('@')[0], // Default name from email
                 email: email,
                 points: 0,
-                houseId: '',
                 role: 'user',
                 avatar: `https://i.pravatar.cc/150?u=${userRecord.uid}`,
             };

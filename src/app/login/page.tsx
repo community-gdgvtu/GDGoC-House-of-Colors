@@ -26,10 +26,13 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   const handleSignIn = async () => {
+    setIsSigningIn(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      // The useEffect will handle redirection
     } catch (error: any) {
       console.error("Error during sign-in:", error);
       toast({
@@ -37,6 +40,8 @@ export default function LoginPage() {
         description: error.message,
         variant: "destructive"
       });
+    } finally {
+        setIsSigningIn(false);
     }
   };
 
@@ -67,7 +72,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!loading && user) {
-        if (user.role === 'admin') {
+        if (user.role === 'organizer') {
             router.push('/admin');
         } else {
             router.push('/dashboard');
@@ -103,16 +108,14 @@ export default function LoginPage() {
                     </div>
                     <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} />
                 </div>
-                <Button onClick={handleSignIn} className="w-full">
-                    <LogIn className="mr-2 h-4 w-4" /> Sign In
+                <Button onClick={handleSignIn} disabled={isSigningIn} className="w-full">
+                    <LogIn className="mr-2 h-4 w-4" /> 
+                    {isSigningIn ? 'Signing In...' : 'Sign In'}
                 </Button>
             </CardContent>
         </Card>
         <div className="text-center text-sm">
-          <p className="text-xs text-muted-foreground">If you don't have an account, please contact an admin.</p>
-          <Link href="/" className="underline text-muted-foreground mt-2 inline-block">
-            Back to Home
-          </Link>
+          <p className="text-xs text-muted-foreground">If you don't have an account, please contact an organizer.</p>
         </div>
       </div>
     </div>

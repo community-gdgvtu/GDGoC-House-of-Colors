@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const currentCount = counterDoc.exists() ? counterDoc.data()?.count || 0 : 0;
                 const newCount = currentCount + 1;
                 transaction.set(counterRef, { count: newCount }, { merge: true });
-                return `GOOGE${String(newCount).padStart(3, '0')}`;
+                return `GDGVTU${String(newCount).padStart(3, '0')}`;
               });
 
               const newUser: User = {
@@ -57,7 +57,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 name: currentFirebaseUser.displayName || 'New User',
                 email: currentFirebaseUser.email || '',
                 points: 0,
-                houseId: '', // Assign later or have a default
                 role: 'user', // Default role
                 avatar: currentFirebaseUser.photoURL || `https://i.pravatar.cc/150?u=${currentFirebaseUser.uid}`,
               };

@@ -23,11 +23,12 @@ import { PlusCircle, MinusCircle } from "lucide-react";
 
 interface ManagePointsDialogProps {
   user: User;
+  awardingUser: User;
   mode: 'add' | 'deduct';
   onUpdate?: (updatedUsers: User[]) => void;
 }
 
-export function ManagePointsDialog({ user, mode, onUpdate }: ManagePointsDialogProps) {
+export function ManagePointsDialog({ user, awardingUser, mode, onUpdate }: ManagePointsDialogProps) {
   const [open, setOpen] = useState(false);
   const [points, setPoints] = useState(0);
   const [remark, setRemark] = useState("");
@@ -59,28 +60,20 @@ export function ManagePointsDialog({ user, mode, onUpdate }: ManagePointsDialogP
     try {
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, "users", user.id);
-            const houseRef = user.houseId ? doc(db, "houses", user.houseId) : null;
-
-            // 1. Perform all reads first.
             const userDoc = await transaction.get(userRef);
             if (!userDoc.exists()) {
                 throw new Error("User does not exist!");
             }
             
-            const houseDoc = houseRef ? await transaction.get(houseRef) : null;
-            
-            // 2. Prepare data and logic after reads are complete.
             const currentPoints = userDoc.data().points || 0;
             let pointsToLog = isAddMode ? points : -points;
             
-            // Prevent user points from going below zero.
             if (!isAddMode && currentPoints < points) {
                 pointsToLog = -currentPoints;
             }
             
             const pointHistoryRef = doc(collection(db, "users", user.id, "point_history"));
 
-            // 3. Perform all writes.
             transaction.update(userRef, {
                 points: increment(pointsToLog)
             });
@@ -89,13 +82,11 @@ export function ManagePointsDialog({ user, mode, onUpdate }: ManagePointsDialogP
                 pointsAdded: pointsToLog,
                 remark: remark,
                 timestamp: serverTimestamp(),
+                awardedById: awardingUser.id,
+                awardedByName: awardingUser.name,
+                awardedToId: user.id,
+                awardedToName: user.name,
             });
-
-            if (houseRef && houseDoc?.exists()) {
-                transaction.update(houseRef, {
-                    points: increment(pointsToLog)
-                });
-            }
         });
 
       const updatedUserDoc = await getDoc(doc(db, "users", user.id));

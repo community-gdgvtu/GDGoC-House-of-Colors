@@ -23,10 +23,11 @@ import { type BulkManagePointsOutput } from "@/lib/types";
 import { type User } from "@/lib/data";
 
 interface BulkManagePointsDialogProps {
+    awardingUser: User;
     onUpdate: (updatedUsers: User[]) => void;
 }
 
-export function BulkManagePointsDialog({ onUpdate }: BulkManagePointsDialogProps) {
+export function BulkManagePointsDialog({ awardingUser, onUpdate }: BulkManagePointsDialogProps) {
   const [open, setOpen] = useState(false);
   const [ids, setIds] = useState("");
   const [points, setPoints] = useState(0);
@@ -53,7 +54,12 @@ export function BulkManagePointsDialog({ onUpdate }: BulkManagePointsDialogProps
     setLoading(true);
     setResult(null);
     try {
-      const res = await bulkManagePoints({ userCustomIds: ids, points: pointsToApply, remark });
+      const res = await bulkManagePoints({ 
+          userCustomIds: ids, 
+          points: pointsToApply, 
+          remark,
+          awardedById: awardingUser.id,
+      });
       setResult(res);
       onUpdate(res.updatedUsers);
       toast({
@@ -90,14 +96,15 @@ export function BulkManagePointsDialog({ onUpdate }: BulkManagePointsDialogProps
         <DialogHeader>
           <DialogTitle>Bulk Manage Points</DialogTitle>
           <DialogDescription>
-            Award or deduct points for multiple users at once. Enter user IDs (e.g., GOOGE001), one per line.
+            Award or deduct points for multiple users at once. Enter user IDs (e.g., GDGVTU001), one per line.
+             {awardingUser.role === 'manager' && " You can only manage points for users in your community."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <Textarea
-            placeholder="GOOGE001
-GOOGE002
-GOOGE003"
+            placeholder="GDGVTU001
+GDGVTU002
+GDGVTU003"
             value={ids}
             onChange={(e) => setIds(e.target.value)}
             rows={8}

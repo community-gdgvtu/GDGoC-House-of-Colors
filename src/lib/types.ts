@@ -21,8 +21,9 @@ export const BulkManagePointsInputSchema = z.object({
     userCustomIds: z.string().describe("A newline-separated list of user custom IDs (e.g., GOOGE001)."),
     points: z.number().describe("The number of points to add (positive) or deduct (negative)."),
     remark: z.string().describe("The reason for the point adjustment."),
+    awardedById: z.string().describe("The UID of the admin/manager awarding the points."),
 });
-export type BulkManagePointsInput = zfus.infer<typeof BulkManagePointsInputSchema>;
+export type BulkManagePointsInput = z.infer<typeof BulkManagePointsInputSchema>;
 
 export const BulkManagePointsOutputSchema = z.object({
     successful: z.array(z.string()).describe("A list of custom IDs that were successfully updated."),
@@ -34,10 +35,17 @@ export const BulkManagePointsOutputSchema = z.object({
 });
 export type BulkManagePointsOutput = z.infer<typeof BulkManagePointsOutputSchema>;
 
-export const ChangeUserHouseInputSchema = z.object({
+export const ChangeUserCommunityInputSchema = z.object({
   userId: z.string(),
-  newHouseId: z.string(),
-  oldHouseId: z.string(),
+  newCommunityId: z.string().optional(), // Can be empty if unassigning
+  oldCommunityId: z.string().optional(),
 });
 
-export type ChangeUserHouseInput = z.infer<typeof ChangeUserHouseInputSchema>;
+export type ChangeUserCommunityInput = z.infer<typeof ChangeUserCommunityInputSchema>;
+
+export const UpdateCommunityManagerInputSchema = z.object({
+    communityId: z.string(),
+    newManagerId: z.string(),
+    oldManagerId: z.string().optional(),
+});
+export type UpdateCommunityManagerInput = z.infer<typeof UpdateCommunityManagerInputSchema>;

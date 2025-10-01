@@ -10,6 +10,7 @@ import {
   Settings,
   User,
   Users,
+  Building,
 } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/icons";
@@ -26,7 +27,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!loading) {
-      if (!user || user.role !== 'admin') {
+      if (!user || user.role !== 'organizer') {
         router.push('/login');
       }
     }
@@ -34,7 +35,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const navItems = [
     { href: "/admin", icon: Home, label: "Overview" },
-    { href: "#", icon: Users, label: "Users" },
+    { href: "/admin/users", icon: Users, label: "Users" },
+    { href: "/admin/communities", icon: Building, label: "Communities" },
     { href: "/admin/profile", icon: User, label: "Profile"},
     { href: "#", icon: Settings, label: "Settings" },
   ];

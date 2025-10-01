@@ -1,40 +1,35 @@
 
 import { PageHeader } from "@/components/page-header";
-import { type User, type House } from "@/lib/data";
+import { type User } from "@/lib/data";
 import { Award, Users as UsersIcon } from "lucide-react";
 import { adminDb } from "@/lib/firebase-admin";
 import { AdminUsersClient } from "@/components/admin-users-client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { HousePerformanceChart } from "@/components/house-performance-chart";
 import { TopPerformersList } from "@/components/top-performers-list";
-import { collection, getDocs, query, orderBy, limit } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 
 // This forces the page to be dynamically rendered and not cached.
 export const revalidate = 0;
 
 async function getDashboardData() {
   try {
-    const housesSnapshot = await adminDb.collection("houses").orderBy("points", "desc").get();
-    const houses = housesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as House[];
+    const usersSnapshot = await adminDb.collection('users').get();
+    const allUsers = usersSnapshot.docs.map(doc => doc.data() as User);
     
-    const topUsersSnapshot = await adminDb.collection("users").orderBy("points", "desc").limit(5).get();
-    const topUsers = topUsersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as User[];
-
-    const statsSnapshot = await adminDb.collection('users').get();
-    const totalUsers = statsSnapshot.docs.filter(doc => doc.data().role !== 'admin').length;
-    const totalPoints = statsSnapshot.docs.reduce((acc, doc) => acc + (doc.data().points > 0 ? doc.data().points : 0), 0);
+    const topUsers = allUsers.filter(u => u.role !== 'organizer').sort((a,b) => (b.points || 0) - (a.points || 0)).slice(0, 5);
+    
+    const totalUsers = allUsers.filter(doc => doc.role !== 'organizer').length;
+    const totalPoints = allUsers.reduce((acc, doc) => acc + (doc.points > 0 ? doc.points : 0), 0);
 
 
-    return { houses, topUsers, totalUsers, totalPoints };
+    return { topUsers, totalUsers, totalPoints };
   } catch (error) {
     console.error("Error fetching admin dashboard data:", error);
-    return { houses: [], topUsers: [], totalUsers: 0, totalPoints: 0 };
+    return { topUsers: [], totalUsers: 0, totalPoints: 0 };
   }
 }
 
 export default async function AdminDashboardPage() {
-  const { houses, topUsers, totalUsers, totalPoints } = await getDashboardData();
+  const { topUsers, totalUsers, totalPoints } = await getDashboardData();
   
   return (
     <>
@@ -47,7 +42,7 @@ export default async function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalUsers}</div>
-            <p className="text-xs text-muted-foreground">participants in the community</p>
+            <p className="text-xs text-muted-foreground">managers and users in the community</p>
           </CardContent>
         </Card>
         <Card>
@@ -57,17 +52,18 @@ export default async function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalPoints}</div>
-            <p className="text-xs text-muted-foreground">across all houses</p>
+            <p className="text-xs text-muted-foreground">across all communities</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7 mb-6">
-        <HousePerformanceChart houses={houses} />
-        <TopPerformersList users={topUsers} houses={houses} />
+        <div className="col-span-12 lg:col-span-4">
+            {/* Placeholder for future chart */}
+        </div>
+        <TopPerformersList users={topUsers} />
       </div>
       
-      {/* Pass an empty array; the client component will fetch the real-time data. */}
       <AdminUsersClient initialUsers={[]} />
     </>
   );

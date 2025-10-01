@@ -37,7 +37,7 @@ export async function backfillCustomIds(): Promise<BackfillResult> {
 
         for (const user of usersToUpdate) {
             currentCount++;
-            const newCustomId = `GOOGE${String(currentCount).padStart(3, '0')}`;
+            const newCustomId = `GDGVTU${String(currentCount).padStart(3, '0')}`;
             const userRef = usersRef.doc(user.id);
             transaction.update(userRef, { customId: newCustomId });
             updatedCount++;

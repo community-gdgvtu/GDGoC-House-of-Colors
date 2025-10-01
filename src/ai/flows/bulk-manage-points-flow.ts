@@ -9,7 +9,7 @@ import { User } from "@/lib/data";
 const MAX_BATCH_SIZE = 500; // Firestore batch limit
 
 export async function bulkManagePoints(input: BulkManagePointsInput): Promise<BulkManagePointsOutput> {
-    const { userCustomIds, points, remark } = input;
+    const { userCustomIds, points, remark, awardedById } = input;
 
     if (points === 0) {
         throw new Error("Points cannot be zero.");
@@ -17,6 +17,15 @@ export async function bulkManagePoints(input: BulkManagePointsInput): Promise<Bu
     if (!remark.trim()) {
         throw new Error("Remark cannot be empty.");
     }
+    if (!awardedById) {
+        throw new Error("AwardedBy ID is missing.");
+    }
+
+    const awardingUserDoc = await adminDb.collection('users').doc(awardedById).get();
+    if (!awardingUserDoc.exists) {
+        throw new Error("The user awarding points does not exist.");
+    }
+    const awardingUser = awardingUserDoc.data() as User;
 
     const customIds = userCustomIds.split('\n').map(id => id.trim()).filter(id => id);
     if (customIds.length === 0) {
@@ -49,8 +58,17 @@ export async function bulkManagePoints(input: BulkManagePointsInput): Promise<Bu
         let writeCount = 0;
 
         for (const [customId, { id: userId, data: user }] of idToUserMap.entries()) {
-            if (user.role === 'admin') {
-                failed.push({ customId, reason: "Cannot manage points for admin users." });
+             // Role-based validation
+            if (awardingUser.role === 'manager' && user.role !== 'user') {
+                failed.push({ customId, reason: "Managers can only award points to users." });
+                continue;
+            }
+            if (awardingUser.role === 'manager' && user.communityId !== awardingUser.communityId) {
+                failed.push({ customId, reason: "Manager can only award points to users in their own community."});
+                continue;
+            }
+            if (user.role === 'organizer') {
+                failed.push({ customId, reason: "Cannot manage points for organizers." });
                 continue;
             }
 
@@ -62,21 +80,18 @@ export async function bulkManagePoints(input: BulkManagePointsInput): Promise<Bu
                 pointsAdded: points,
                 remark: remark,
                 timestamp: FieldValue.serverTimestamp(),
+                awardedById: awardingUser.id,
+                awardedByName: awardingUser.name,
+                awardedToId: user.id,
+                awardedToName: user.name,
             });
 
-            writeCount += 2; // 2 writes per user
-
-            // House points update
-            if (user.houseId) {
-                const houseRef = adminDb.collection('houses').doc(user.houseId);
-                batch.update(houseRef, { points: FieldValue.increment(points) });
-                writeCount++;
-            }
+            writeCount += 2;
 
             successful.push(customId);
-            updatedUsers.push({ ...user, points: user.points + points });
+            updatedUsers.push({ ...user, points: (user.points || 0) + points });
 
-            if (writeCount >= MAX_BATCH_SIZE - 2) {
+            if (writeCount >= MAX_BATCH_SIZE - 1) {
                 await batch.commit();
                 batch = adminDb.batch();
                 writeCount = 0;
@@ -88,9 +103,7 @@ export async function bulkManagePoints(input: BulkManagePointsInput): Promise<Bu
         }
 
     } catch (error: any) {
-        // This is a general catch block. Specific failures are already in the `failed` array.
         console.error("Error during bulk points management:", error);
-        // Only add a generic failure if there are no specific failures, to avoid double-reporting.
         if (failed.length === 0 && successful.length === 0) {
             customIds.forEach(customId => {
                 failed.push({ customId, reason: `An unexpected error occurred: ${error.message}` });
