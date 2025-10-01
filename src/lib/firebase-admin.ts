@@ -7,7 +7,6 @@ if (!admin.apps.length) {
     // When deployed, App Hosting provides GOOGLE_CLOUD_PROJECT.
     // For local dev, `gcloud auth application-default login` provides credentials.
     admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
       projectId: 'gdgvtu-b2d9e', // Explicitly specify the project ID
     });
     console.log('[Firebase Admin] Initialized successfully.');

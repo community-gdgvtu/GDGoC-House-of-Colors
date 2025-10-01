@@ -36,7 +36,7 @@ export async function bulkCreateUsers(input: BulkCreateUsersInput): Promise<Bulk
                 
                 transaction.set(counterRef, { count: newCount }, { merge: true });
 
-                return `GDGVTU${String(newCount).padStart(3, '0')}`;
+                return `GOOGE${String(newCount).padStart(3, '0')}`;
             });
 
             const newUser: User = {
