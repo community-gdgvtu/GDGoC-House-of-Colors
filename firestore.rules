@@ -1,80 +1,59 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper functions
-    function isSignedIn() {
+    function isAuth() {
       return request.auth != null;
     }
-    
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
 
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+    
     function getUserData(userId) {
       return get(/databases/$(database)/documents/users/$(userId)).data;
     }
 
     function isOrganizer() {
-      return isSignedIn() && getUserData(request.auth.uid).role == 'organizer';
+        return isAuth() && getUserData(request.auth.uid).role == 'organizer';
     }
-    
+
     function isManager() {
-        return isSignedIn() && getUserData(request.auth.uid).role == 'manager';
+        return isAuth() && getUserData(request.auth.uid).role == 'manager';
     }
     
     function isManagerOfUser(userId) {
-        let managerData = getUserData(request.auth.uid);
-        let userData = getUserData(userId);
-        return isManager() && managerData.communityId == userData.communityId;
+      let managerData = getUserData(request.auth.uid);
+      let userData = getUserData(userId);
+      return isManager() && managerData.communityId == userData.communityId;
     }
 
-    // Default deny all
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Users Collection
+    // Rules for top-level collections
     match /users/{userId} {
-      // Allow any signed-in user to read user profiles
-      allow read: if isSignedIn();
-
-      // Allow a user to update their own profile (e.g., name)
-      allow update: if isOwner(userId) && request.resource.data.keys().hasOnly(['name', 'avatar']);
+      // Any authenticated user can read user profiles for leaderboards, etc.
+      allow get: if isAuth();
+      // Users can only update their own profile, and only the name field
+      allow update: if isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']);
       
-      // Organizers can update any user's role or community
-      allow update: if isOrganizer() && (request.resource.data.keys().hasOnly(['role', 'communityId']) || request.resource.data.keys().hasAny(['name', 'avatar', 'role', 'communityId']));
+      // Organizers/Managers can update points, but this is done via server-side flows,
+      // so client-side updates to points are denied.
+      allow create, delete, list: if false;
 
-      // Allow creating a user (e.g., on first sign-in)
-      allow create: if isOwner(userId);
-      
-      // Only organizers can delete users
-      allow delete: if isOrganizer();
-
-      // Point History Subcollection
       match /point_history/{historyId} {
-        // Only the user themselves or an organizer can read point history
-        allow read: if isOwner(userId) || isOrganizer();
-
-        // No one can write to point history directly from the client.
-        // This must be done via server-side logic (e.g., Cloud Functions/server flows)
-        allow write: if false;
+        // Only the user themselves can see their own point history.
+        allow read: if isOwner(userId);
+        allow write: if false; // History is append-only via server-side flows
       }
     }
     
-    // Communities Collection
     match /communities/{communityId} {
-        // Any signed-in user can view the list of communities
-        allow read: if isSignedIn();
-        
-        // Only organizers can create, update, or delete communities
-        allow write: if isOrganizer();
+        allow read: if isAuth();
+        allow write: if isOrganizer(); // Only organizers can create/update/delete communities
     }
     
-    // Metadata for counters
     match /metadata/{docId} {
-        // No client-side access
+        // Only organizers (via server functions) can change metadata like counters.
         allow read, write: if false;
     }
   }
