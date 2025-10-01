@@ -4,22 +4,13 @@ import admin from 'firebase-admin';
 // Prevent re-initialization on hot reloads
 if (!admin.apps.length) {
   try {
-    // When deployed, these environment variables are automatically provided.
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-       console.log('[Firebase Admin] Initializing with GOOGLE_APPLICATION_CREDENTIALS.');
-       admin.initializeApp({
-         credential: admin.credential.applicationDefault(),
-         databaseURL: `https://${process.env.GCLOUD_PROJECT}.firebaseio.com`,
-       });
-    } else {
-       // For local development, it will fall back to Application Default Credentials.
-       // Ensure you've run `gcloud auth application-default login` in your terminal.
-       console.log('[Firebase Admin] Initializing with Application Default Credentials for local development.');
-       admin.initializeApp({
-         credential: admin.credential.applicationDefault(),
-         databaseURL: 'https://gdgvtu-b2d9e.firebaseio.com',
-       });
-    }
+    // When deployed, App Hosting provides GOOGLE_CLOUD_PROJECT.
+    // For local dev, `gcloud auth application-default login` provides credentials.
+    admin.initializeApp({
+      credential: admin.credential.applicationDefault(),
+      projectId: 'gdgvtu-b2d9e', // Explicitly specify the project ID
+    });
+    console.log('[Firebase Admin] Initialized successfully.');
   } catch (error: any) {
     console.error('[Firebase Admin] Initialization error:', error.stack);
   }
