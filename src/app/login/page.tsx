@@ -27,6 +27,11 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
@@ -71,15 +76,27 @@ export default function LoginPage() {
   };
 
   useEffect(() => {
-    if (!loading && user) {
+    if (isClient && !loading && user) {
         if (user.role === 'organizer') {
             router.push('/admin');
         } else {
             router.push('/dashboard');
         }
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, isClient]);
 
+  if (loading || !isClient) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <div>Loading...</div>
+      </div>
+    );
+  }
+
+  if (user) {
+    // Render nothing while redirecting
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
