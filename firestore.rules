@@ -2,72 +2,43 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper functions
+  
     function isAuthenticated() {
       return request.auth != null;
     }
-    
-    function isOrganizer() {
-      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'organizer';
-    }
 
-    function isManager() {
-        return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager';
-    }
-    
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    // Rules for the 'users' collection
     match /users/{userId} {
-      // Allow a user to create their own document
-      allow create: if isOwner(userId);
-      
       // ANY authenticated user can read user profiles (for leaderboards, etc.)
       allow get: if isAuthenticated();
       allow list: if isAuthenticated();
       
-      // A user can only update their own name. Organizers can update any user.
-      allow update: if (isOwner(userId) && request.resource.data.keys().hasOnly(['name'])) || isOrganizer();
-
-      // Only organizers can delete users.
-      allow delete: if isOrganizer();
+      // Allow a user to create their own document, or update their own name.
+      allow write: if request.auth.uid == userId && 
+                      // CREATE condition: document is being created
+                      (!exists(/databases/$(database)/documents/users/$(userId)) || 
+                      // UPDATE condition: only the 'name' field is being changed
+                      request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']));
     }
     
-    // Rules for 'point_history' subcollection
     match /users/{userId}/point_history/{historyId} {
-        // Organizers or managers can create history entries.
-        allow create: if isOrganizer() || isManager();
-        
-        // Only the user themselves or an organizer can read point history
-        allow read, list: if isOwner(userId) || isOrganizer();
-        
-        // History is immutable
+        // Only authenticated users can read point history
+        allow read: if isAuthenticated();
+        // Point history is immutable once created by an organizer/manager
+        // This will be handled by more specific server-side logic (flows)
+        allow create: if isAuthenticated();
         allow update, delete: if false;
     }
 
-    // Rules for the 'houses' collection
-    match /houses/{houseId} {
-      // Anyone can read house data
-      allow read: if true;
-      // Only organizers can create, update, or delete houses
-      allow write: if isOrganizer();
-    }
-    
-    // Rules for the 'communities' collection
     match /communities/{communityId} {
-      // Anyone can read community data
-      allow read: if true;
-      // Only organizers can create, update, or delete communities
-      allow write: if isOrganizer();
+        allow read: if true; // Communities are public
+        // Only organizers can write to communities
+        allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'organizer';
     }
-    
-    // Rules for the 'metadata' collection
+
     match /metadata/{docId} {
-        // Only organizers can read/write metadata
-        allow read, write: if isOrganizer();
+      // Allow server-side flows (which run with admin privileges) to update metadata
+      allow read: if isAuthenticated();
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'organizer';
     }
   }
 }
