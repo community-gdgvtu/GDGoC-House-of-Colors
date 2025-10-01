@@ -1,23 +1,16 @@
 
 import admin from 'firebase-admin';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 // Prevent re-initialization on hot reloads
 if (!admin.apps.length) {
   try {
-    // When deployed to Vercel, these environment variables will be available.
-    if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_PRIVATE_KEY) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        }),
-        databaseURL: 'https://gdgvtu-b2d9e.firebaseio.com',
-      });
-       console.log('[Firebase Admin] Initialized with Environment Variables.');
+    // When deployed, these environment variables are automatically provided.
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+       console.log('[Firebase Admin] Initializing with GOOGLE_APPLICATION_CREDENTIALS.');
+       admin.initializeApp({
+         credential: admin.credential.applicationDefault(),
+         databaseURL: `https://${process.env.GCLOUD_PROJECT}.firebaseio.com`,
+       });
     } else {
        // For local development, it will fall back to Application Default Credentials.
        // Ensure you've run `gcloud auth application-default login` in your terminal.
@@ -27,8 +20,8 @@ if (!admin.apps.length) {
          databaseURL: 'https://gdgvtu-b2d9e.firebaseio.com',
        });
     }
-  } catch (error) {
-    console.error('[Firebase Admin] Initialization error:', error);
+  } catch (error: any) {
+    console.error('[Firebase Admin] Initialization error:', error.stack);
   }
 }
 
