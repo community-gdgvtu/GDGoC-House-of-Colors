@@ -16,8 +16,8 @@ export async function backfillCustomIds(): Promise<BackfillResult> {
     const usersToUpdate: User[] = [];
     usersSnapshot.forEach(doc => {
         const user = { id: doc.id, ...doc.data() } as User;
-        // Only backfill users who are missing a customId
-        if (!user.customId) {
+        // Only backfill users who are missing a proper customId
+        if (!user.customId || user.customId === 'pending') {
             usersToUpdate.push(user);
         }
     });
@@ -43,6 +43,7 @@ export async function backfillCustomIds(): Promise<BackfillResult> {
             updatedCount++;
         }
 
+        // Set the new counter value. Use merge to create it if it doesn't exist.
         transaction.set(counterRef, { count: currentCount }, { merge: true });
     });
 
