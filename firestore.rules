@@ -1,67 +1,80 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to get user data
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
     function getUserData(userId) {
       return get(/databases/$(database)/documents/users/$(userId)).data;
     }
 
-    // Helper function to check if a user is an organizer
-    function isOrganizer(userId) {
-      return getUserData(userId).role == 'organizer';
-    }
-
-    // Helper function to check if a user is a manager of a specific community
-    function isManagerOfCommunity(userId, communityId) {
-      let userData = getUserData(userId);
-      return userData.role == 'manager' && userData.communityId == communityId;
+    function isOrganizer() {
+      return isSignedIn() && getUserData(request.auth.uid).role == 'organizer';
     }
     
-    // Helper function to check if the request is from an authenticated user
-    function isAuthenticated() {
-        return request.auth != null;
+    function isManager() {
+        return isSignedIn() && getUserData(request.auth.uid).role == 'manager';
     }
     
-    // Helper to check if the user owns the document
-    function isOwner(userId) {
-        return request.auth.uid == userId;
+    function isManagerOfUser(userId) {
+        let managerData = getUserData(request.auth.uid);
+        let userData = getUserData(userId);
+        return isManager() && managerData.communityId == userData.communityId;
     }
 
-    // Rules for the 'users' collection
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users Collection
     match /users/{userId} {
-      // ANY authenticated user can read user profiles (for leaderboards, etc.)
-      allow read: if isAuthenticated();
+      // Allow any signed-in user to read user profiles
+      allow read: if isSignedIn();
 
-      // Users can ONLY update their own 'name'.
-      // Organizers can update any user's data.
-      allow update: if (isOwner(userId) && request.resource.data.keys().hasOnly(['name'])) || isOrganizer(request.auth.uid);
+      // Allow a user to update their own profile (e.g., name)
+      allow update: if isOwner(userId) && request.resource.data.keys().hasOnly(['name', 'avatar']);
       
-      // Only organizers can create or delete users through server-side functions.
-      // These rules are for client-side access.
-      allow create, delete: if false;
+      // Organizers can update any user's role or community
+      allow update: if isOrganizer() && (request.resource.data.keys().hasOnly(['role', 'communityId']) || request.resource.data.keys().hasAny(['name', 'avatar', 'role', 'communityId']));
 
-      // Point history can be read by the owner or an organizer
+      // Allow creating a user (e.g., on first sign-in)
+      allow create: if isOwner(userId);
+      
+      // Only organizers can delete users
+      allow delete: if isOrganizer();
+
+      // Point History Subcollection
       match /point_history/{historyId} {
-        allow read: if isOwner(userId) || isOrganizer(request.auth.uid);
-        allow create, update, delete: if false; // Should only be written by server-side logic
+        // Only the user themselves or an organizer can read point history
+        allow read: if isOwner(userId) || isOrganizer();
+
+        // No one can write to point history directly from the client.
+        // This must be done via server-side logic (e.g., Cloud Functions/server flows)
+        allow write: if false;
       }
     }
-
-    // Rules for the 'communities' collection
+    
+    // Communities Collection
     match /communities/{communityId} {
-        // Any authenticated user can read community data
-        allow read: if isAuthenticated();
+        // Any signed-in user can view the list of communities
+        allow read: if isSignedIn();
         
         // Only organizers can create, update, or delete communities
-        allow write: if isOrganizer(request.auth.uid);
+        allow write: if isOrganizer();
     }
     
-    // Rules for the 'metadata' collection (e.g., user counter)
+    // Metadata for counters
     match /metadata/{docId} {
-        // No client-side access. This should only be modified by trusted server-side code.
+        // No client-side access
         allow read, write: if false;
     }
   }

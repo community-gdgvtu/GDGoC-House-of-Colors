@@ -15,7 +15,7 @@ if (!admin.apps.length) {
           privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
           clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
         }),
-        databaseURL: 'https://gdgoc-vtu.firebaseio.com',
+        databaseURL: 'https://gdgvtu-b2d9e.firebaseio.com',
       });
        console.log('[Firebase Admin] Initialized with Environment Variables.');
     } else {
@@ -24,7 +24,7 @@ if (!admin.apps.length) {
        console.log('[Firebase Admin] Initializing with Application Default Credentials for local development.');
        admin.initializeApp({
          credential: admin.credential.applicationDefault(),
-         databaseURL: 'https://gdgoc-vtu.firebaseio.com',
+         databaseURL: 'https://gdgvtu-b2d9e.firebaseio.com',
        });
     }
   } catch (error) {
