@@ -19,7 +19,7 @@ export type BulkCreateUsersOutput = z.infer<typeof BulkCreateUsersOutputSchema>;
 
 
 export const BulkManagePointsInputSchema = z.object({
-    userCustomIds: z.string().describe("A newline-separated list of user custom IDs (e.g., GDGVTU001)."),
+    userCustomIds: z.string().describe("A newline-separated list of user custom IDs (e.g., GOOGE001)."),
     points: z.number().describe("The number of points to add (positive) or deduct (negative)."),
     remark: z.string().describe("The reason for the point adjustment."),
     awardedById: z.string().describe("The UID of the admin/manager awarding the points."),

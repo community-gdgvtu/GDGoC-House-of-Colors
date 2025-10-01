@@ -96,15 +96,15 @@ export function BulkManagePointsDialog({ awardingUser, onUpdate }: BulkManagePoi
         <DialogHeader>
           <DialogTitle>Bulk Manage Points</DialogTitle>
           <DialogDescription>
-            Award or deduct points for multiple users at once. Enter user IDs (e.g., GDGVTU001), one per line.
+            Award or deduct points for multiple users at once. Enter user IDs (e.g., GOOGE001), one per line.
              {awardingUser.role === 'manager' && " You can only manage points for users in your community."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <Textarea
-            placeholder="GDGVTU001
-GDGVTU002
-GDGVTU003"
+            placeholder="GOOGE001
+GOOGE002
+GOOGE003"
             value={ids}
             onChange={(e) => setIds(e.target.value)}
             rows={8}

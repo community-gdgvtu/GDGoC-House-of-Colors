@@ -83,7 +83,7 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
 
 
   const handleBackfill = async () => {
-    if (!confirm("This will find all users who do not have a custom ID (e.g., GDGVTU001) and assign one to them. This is irreversible. Are you sure?")) {
+    if (!confirm("This will find all users who do not have a custom ID (e.g., GOOGE001) and assign one to them. This is irreversible. Are you sure?")) {
       return;
     }
     setBackfillLoading(true);
@@ -362,5 +362,3 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
     </Card>
   );
 }
-
-
