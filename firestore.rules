@@ -1,60 +1,73 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
+    
     // Helper functions
-    function isAuth() {
+    function isAuthenticated() {
       return request.auth != null;
     }
-
-    function isOwner(userId) {
-      return isAuth() && request.auth.uid == userId;
-    }
     
-    function getUserData(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data;
-    }
-
     function isOrganizer() {
-        return isAuth() && getUserData(request.auth.uid).role == 'organizer';
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'organizer';
     }
 
     function isManager() {
-        return isAuth() && getUserData(request.auth.uid).role == 'manager';
+        return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager';
     }
     
-    function isManagerOfUser(userId) {
-      let managerData = getUserData(request.auth.uid);
-      let userData = getUserData(userId);
-      return isManager() && managerData.communityId == userData.communityId;
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Rules for top-level collections
+    // Rules for the 'users' collection
     match /users/{userId} {
-      // Any authenticated user can read user profiles for leaderboards, etc.
-      allow get: if isAuth();
-      // Users can only update their own profile, and only the name field
-      allow update: if isOwner(userId) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']);
+      // Allow a user to create their own document
+      allow create: if isOwner(userId);
       
-      // Organizers/Managers can update points, but this is done via server-side flows,
-      // so client-side updates to points are denied.
-      allow create, delete, list: if false;
+      // ANY authenticated user can read user profiles (for leaderboards, etc.)
+      allow get: if isAuthenticated();
+      allow list: if isAuthenticated();
+      
+      // A user can only update their own name. Organizers can update any user.
+      allow update: if (isOwner(userId) && request.resource.data.keys().hasOnly(['name'])) || isOrganizer();
 
-      match /point_history/{historyId} {
-        // Only the user themselves can see their own point history.
-        allow read: if isOwner(userId);
-        allow write: if false; // History is append-only via server-side flows
-      }
+      // Only organizers can delete users.
+      allow delete: if isOrganizer();
     }
     
+    // Rules for 'point_history' subcollection
+    match /users/{userId}/point_history/{historyId} {
+        // Organizers or managers can create history entries.
+        allow create: if isOrganizer() || isManager();
+        
+        // Only the user themselves or an organizer can read point history
+        allow read, list: if isOwner(userId) || isOrganizer();
+        
+        // History is immutable
+        allow update, delete: if false;
+    }
+
+    // Rules for the 'houses' collection
+    match /houses/{houseId} {
+      // Anyone can read house data
+      allow read: if true;
+      // Only organizers can create, update, or delete houses
+      allow write: if isOrganizer();
+    }
+    
+    // Rules for the 'communities' collection
     match /communities/{communityId} {
-        allow read: if isAuth();
-        allow write: if isOrganizer(); // Only organizers can create/update/delete communities
+      // Anyone can read community data
+      allow read: if true;
+      // Only organizers can create, update, or delete communities
+      allow write: if isOrganizer();
     }
     
+    // Rules for the 'metadata' collection
     match /metadata/{docId} {
-        // Only organizers (via server functions) can change metadata like counters.
-        allow read, write: if false;
+        // Only organizers can read/write metadata
+        allow read, write: if isOrganizer();
     }
   }
 }
