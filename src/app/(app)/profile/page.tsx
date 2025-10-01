@@ -13,6 +13,9 @@ import { useToast } from "@/hooks/use-toast";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Loader2 } from "lucide-react";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError, type SecurityRuleContext } from "@/firebase/errors";
+
 
 export default function ProfilePage() {
   const { user, loading: authLoading } = useAuth();
@@ -37,26 +40,27 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     const userRef = doc(db, "users", user.id);
+    const updatedData = { name: name };
 
-    try {
-      await updateDoc(userRef, {
-        name: name,
+    updateDoc(userRef, updatedData)
+      .then(() => {
+        toast({
+          title: "Profile Updated",
+          description: "Your name has been successfully updated.",
+        });
+        setHasChanged(false);
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'update',
+            requestResourceData: updatedData
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setIsSaving(false);
       });
-      toast({
-        title: "Profile Updated",
-        description: "Your name has been successfully updated.",
-      });
-      setHasChanged(false);
-    } catch (error: any) {
-      console.error("Error updating profile:", error);
-      toast({
-        title: "Update Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   if (authLoading) {

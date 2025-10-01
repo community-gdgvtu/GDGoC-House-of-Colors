@@ -20,6 +20,8 @@ import { type User } from "@/lib/data";
 import { db } from "@/lib/firebase";
 import { doc, collection, serverTimestamp, increment, runTransaction, getDoc } from "firebase/firestore";
 import { PlusCircle, MinusCircle } from "lucide-react";
+import { errorEmitter } from "@/firebase/error-emitter";
+import { FirestorePermissionError, type SecurityRuleContext } from "@/firebase/errors";
 
 interface ManagePointsDialogProps {
   user: User;
@@ -103,12 +105,12 @@ export function ManagePointsDialog({ user, awardingUser, mode, onUpdate }: Manag
       setRemark("");
       setOpen(false);
     } catch (error: any) {
-      console.error(`Error ${isAddMode ? 'awarding' : 'deducting'} points:`, error);
-      toast({
-        title: "Error",
-        description: `Failed to ${isAddMode ? 'award' : 'deduct'} points. ${error.message}`,
-        variant: "destructive",
-      });
+        const permissionError = new FirestorePermissionError({
+            path: `/users/${user.id}`,
+            operation: 'update',
+            requestResourceData: { points: `increment(${isAddMode ? points : -points})` }
+        } satisfies SecurityRuleContext);
+        errorEmitter.emit('permission-error', permissionError);
     } finally {
       setLoading(false);
     }

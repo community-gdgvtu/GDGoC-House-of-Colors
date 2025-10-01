@@ -6,6 +6,9 @@ import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot, runTransaction, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { User } from '@/lib/data';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+
 
 interface AuthContextType {
   user: User | null;
@@ -39,6 +42,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setLoading(false);
           } else {
             // Create a new user if they don't exist in firestore
+            const newUser: User = {
+                id: currentFirebaseUser.uid,
+                customId: 'TBD', // Placeholder
+                name: currentFirebaseUser.displayName || 'New User',
+                email: currentFirebaseUser.email || '',
+                points: 0,
+                role: 'user', // Default role
+                avatar: currentFirebaseUser.photoURL || `https://i.pravatar.cc/150?u=${currentFirebaseUser.uid}`,
+            };
+
             try {
               const counterRef = doc(db, 'metadata', 'userCounter');
 
@@ -50,26 +63,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 transaction.set(counterRef, { count: newCount }, { merge: true });
                 return `GDGVTU${String(newCount).padStart(3, '0')}`;
               });
+              
+              newUser.customId = newCustomId;
 
-              const newUser: User = {
-                id: currentFirebaseUser.uid,
-                customId: newCustomId,
-                name: currentFirebaseUser.displayName || 'New User',
-                email: currentFirebaseUser.email || '',
-                points: 0,
-                role: 'user', // Default role
-                avatar: currentFirebaseUser.photoURL || `https://i.pravatar.cc/150?u=${currentFirebaseUser.uid}`,
-              };
               await setDoc(userRef, newUser);
               setUser(newUser);
             } catch (e) {
-              console.error("Error creating new user:", e);
+                const permissionError = new FirestorePermissionError({
+                    path: userRef.path,
+                    operation: 'create',
+                    requestResourceData: newUser
+                } satisfies SecurityRuleContext);
+                errorEmitter.emit('permission-error', permissionError);
             } finally {
               setLoading(false);
             }
           }
         }, (error) => {
-          console.error("Error listening to user document:", error);
+          const permissionError = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'get'
+          } satisfies SecurityRuleContext);
+          errorEmitter.emit('permission-error', permissionError);
           setUser(null);
           setLoading(false);
         });
