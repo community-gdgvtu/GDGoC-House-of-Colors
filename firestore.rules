@@ -4,34 +4,65 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // By default, deny all reads and writes
-    match /{document=**} {
-      allow read, write: if false;
+    // Helper function to get user data
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
     }
 
-    // Allow authenticated users to read public data
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      // Allow a user to update their own document (e.g., their name)
-      // but not their points, role, or house.
-      allow update: if request.auth.uid == userId
-                    && request.resource.data.keys().hasOnly(['name', 'id', 'customId', 'email', 'points', 'houseId', 'role', 'avatar'])
-                    && request.resource.data.name != resource.data.name;
+    // Helper function to check if a user is an organizer
+    function isOrganizer(userId) {
+      return getUserData(userId).role == 'organizer';
     }
 
-    match /users/{userId}/point_history/{historyId} {
-      // Allow a user to read their own point history
-      allow read: if request.auth.uid == userId;
-    }
-
-    // Allow authenticated users to read house data
-    match /houses/{houseId} {
-      allow read: if request.auth != null;
+    // Helper function to check if a user is a manager of a specific community
+    function isManagerOfCommunity(userId, communityId) {
+      let userData = getUserData(userId);
+      return userData.role == 'manager' && userData.communityId == communityId;
     }
     
-    // Allow authenticated users to read metadata (for user counter)
+    // Helper function to check if the request is from an authenticated user
+    function isAuthenticated() {
+        return request.auth != null;
+    }
+    
+    // Helper to check if the user owns the document
+    function isOwner(userId) {
+        return request.auth.uid == userId;
+    }
+
+    // Rules for the 'users' collection
+    match /users/{userId} {
+      // ANY authenticated user can read user profiles (for leaderboards, etc.)
+      allow read: if isAuthenticated();
+
+      // Users can ONLY update their own 'name'.
+      // Organizers can update any user's data.
+      allow update: if (isOwner(userId) && request.resource.data.keys().hasOnly(['name'])) || isOrganizer(request.auth.uid);
+      
+      // Only organizers can create or delete users through server-side functions.
+      // These rules are for client-side access.
+      allow create, delete: if false;
+
+      // Point history can be read by the owner or an organizer
+      match /point_history/{historyId} {
+        allow read: if isOwner(userId) || isOrganizer(request.auth.uid);
+        allow create, update, delete: if false; // Should only be written by server-side logic
+      }
+    }
+
+    // Rules for the 'communities' collection
+    match /communities/{communityId} {
+        // Any authenticated user can read community data
+        allow read: if isAuthenticated();
+        
+        // Only organizers can create, update, or delete communities
+        allow write: if isOrganizer(request.auth.uid);
+    }
+    
+    // Rules for the 'metadata' collection (e.g., user counter)
     match /metadata/{docId} {
-      allow read: if request.auth != null;
+        // No client-side access. This should only be modified by trusted server-side code.
+        allow read, write: if false;
     }
   }
 }
