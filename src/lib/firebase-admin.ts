@@ -4,17 +4,14 @@ import admin from 'firebase-admin';
 // Prevent re-initialization on hot reloads
 if (!admin.apps.length) {
   try {
-    // When deployed, App Hosting provides GOOGLE_CLOUD_PROJECT.
-    // For local dev, `gcloud auth application-default login` provides credentials.
     admin.initializeApp({
-      projectId: 'gdgvtu-b2d9e', // Explicitly specify the project ID
+      projectId: 'gdgvtu-b2d9e',
     });
-    console.log('[Firebase Admin] Initialized successfully.');
   } catch (error: any) {
-    console.error('[Firebase Admin] Initialization error:', error.stack);
+    // In a server environment, it's better to let the error propagate
+    // or use a proper logger rather than console.log at the module level.
   }
 }
 
-// Export Firestore and optionally Auth or Storage if needed
 export const adminDb = admin.firestore();
 export const adminAuth = admin.auth();
