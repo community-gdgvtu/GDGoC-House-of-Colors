@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -28,6 +29,7 @@ import { db } from "@/lib/firebase";
 import { Skeleton } from "./ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useAuth } from "@/hooks/use-auth";
+import { CommunityUserSelector } from "./community-user-selector";
 
 type SortKey = keyof User | 'communityName';
 type SortDirection = 'asc' | 'desc';
@@ -268,16 +270,16 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                   {getSortIcon('name')}
                 </Button>
               </TableHead>
+              <TableHead className="hidden md:table-cell">
+                 <Button variant="ghost" onClick={() => handleSort('communityName')}>
+                  Community
+                  {getSortIcon('communityName')}
+                </Button>
+              </TableHead>
               <TableHead className="hidden sm:table-cell">
                 <Button variant="ghost" onClick={() => handleSort('role')}>
                     Role
                     {getSortIcon('role')}
-                </Button>
-              </TableHead>
-               <TableHead className="hidden md:table-cell">
-                 <Button variant="ghost" onClick={() => handleSort('communityName')}>
-                  Community
-                  {getSortIcon('communityName')}
                 </Button>
               </TableHead>
               <TableHead className="text-right">
@@ -302,8 +304,8 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-[70px]" /></TableCell>
                   <TableCell className="hidden md:table-cell"><Skeleton className="h-8 w-[120px]" /></TableCell>
+                  <TableCell className="hidden sm:table-cell"><Skeleton className="h-6 w-[70px]" /></TableCell>
                   <TableCell className="text-right"><Skeleton className="h-6 w-[30px] ml-auto" /></TableCell>
                   <TableCell className="text-right"><Skeleton className="h-8 w-[150px]" /></TableCell>
                 </TableRow>
@@ -325,18 +327,18 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
                       </Avatar>
                       <div>
                         <div className="font-medium flex items-center gap-2">{user.name} {getRoleIcon(user.role)}</div>
-                        <div className="text-xs text-muted-foreground block sm:hidden md:block">{user.email}</div>
-                        <div className="text-xs text-muted-foreground font-mono block sm:hidden md:block">{user.customId || 'NO ID'}</div>
+                        <div className="text-xs text-muted-foreground block md:hidden lg:block">{user.email}</div>
+                        <div className="text-xs text-muted-foreground font-mono block md:hidden lg:block">{user.customId || 'NO ID'}</div>
                       </div>
                     </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <CommunityUserSelector user={user} communities={communities} onUpdate={onUsersUpdated} />
                   </TableCell>
                    <TableCell className="hidden sm:table-cell">
                     <Badge variant={user.role === 'organizer' ? 'destructive' : user.role === 'manager' ? 'default' : 'secondary'}>
                       {user.role}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell">
-                    {communityMap.get(user.communityId || '')?.name || 'Unassigned'}
                   </TableCell>
                   <TableCell className="text-right font-medium tabular-nums">
                      {user.role === 'organizer' ? "-" : user.points}
@@ -360,3 +362,4 @@ export function AdminUsersClient({ initialUsers }: AdminUsersClientProps) {
     </Card>
   );
 }
+

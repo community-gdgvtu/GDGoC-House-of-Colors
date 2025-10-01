@@ -1,4 +1,5 @@
 
+
 import { z } from 'zod';
 import { type User } from '@/lib/data';
 
@@ -18,7 +19,7 @@ export type BulkCreateUsersOutput = z.infer<typeof BulkCreateUsersOutputSchema>;
 
 
 export const BulkManagePointsInputSchema = z.object({
-    userCustomIds: z.string().describe("A newline-separated list of user custom IDs (e.g., GOOGE001)."),
+    userCustomIds: z.string().describe("A newline-separated list of user custom IDs (e.g., GDGVTU001)."),
     points: z.number().describe("The number of points to add (positive) or deduct (negative)."),
     remark: z.string().describe("The reason for the point adjustment."),
     awardedById: z.string().describe("The UID of the admin/manager awarding the points."),
@@ -49,3 +50,11 @@ export const UpdateCommunityManagerInputSchema = z.object({
     oldManagerId: z.string().optional(),
 });
 export type UpdateCommunityManagerInput = z.infer<typeof UpdateCommunityManagerInputSchema>;
+
+
+export const ChangeUserHouseInputSchema = z.object({
+    userId: z.string(),
+    newHouseId: z.string(),
+    oldHouseId: z.string().optional(),
+});
+export type ChangeUserHouseInput = z.infer<typeof ChangeUserHouseInputSchema>;

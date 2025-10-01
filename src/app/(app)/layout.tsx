@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -16,7 +17,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/hooks/use-auth";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { collection, onSnapshot } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import type { Community } from "@/lib/data";
@@ -34,7 +35,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user, loading, router]);
   
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, "communities"), (snapshot) => {
+    const q = query(collection(db, "communities"), orderBy("name"));
+    const unsub = onSnapshot(q, (snapshot) => {
       const communitiesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Community[];
       setCommunities(communitiesData);
     });
@@ -76,11 +78,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   {item.label}
                 </Link>
               ))}
-               <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground">
+               <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground mt-4 font-semibold">
                 <Users className="h-4 w-4" />
                 Communities
               </div>
-              <div className="ml-7">
+              <div className="ml-7 flex flex-col gap-1">
                 {communities.map(community => (
                     <Link key={community.id} href={`/community/${community.id}`} className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary text-xs">
                         {community.name}
@@ -126,7 +128,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     {item.label}
                   </Link>
                 ))}
-                <div className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground">
+                <div className="mx-[-0.65rem] flex items-center gap-4 rounded-xl px-3 py-2 text-muted-foreground font-semibold mt-4">
                     <Users className="h-5 w-5" />
                     Communities
                 </div>
