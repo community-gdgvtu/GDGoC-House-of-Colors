@@ -112,11 +112,17 @@ export default function LoginPage() {
                     <LogIn className="mr-2 h-4 w-4" /> 
                     {isSigningIn ? 'Signing In...' : 'Sign In'}
                 </Button>
+                 <div className="mt-4 text-center text-sm">
+                  Don&apos;t have an account?{" "}
+                  <Link href="#" className="underline" onClick={(e) => {
+                    e.preventDefault();
+                    toast({title: "Registration", description: "Please contact an organizer to get an account."})
+                  }}>
+                    Register
+                  </Link>
+                </div>
             </CardContent>
         </Card>
-        <div className="text-center text-sm">
-          <p className="text-xs text-muted-foreground">If you don't have an account, please contact an organizer.</p>
-        </div>
       </div>
     </div>
   );
